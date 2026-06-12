@@ -1,0 +1,76 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SectionHeading from "../components/SectionHeading.astro";
+
+const status = Astro.url.searchParams.get("status");
+const notices = {
+  ok: {
+    tone: "success",
+    text: "送信を受け付けました。内容を確認して返信します。"
+  },
+  missing: {
+    tone: "error",
+    text: "未入力の必須項目があります。入力内容を確認してください。"
+  },
+  email: {
+    tone: "error",
+    text: "メールアドレスの形式が正しくありません。"
+  },
+  error: {
+    tone: "error",
+    text: "送信に失敗しました。時間をおいて再度お試しください。"
+  }
+} as const;
+const notice = status ? notices[status as keyof typeof notices] : undefined;
+---
+
+<BaseLayout title="お問い合わせ" description="お問い合わせフォーム">
+  <section class="page-section">
+    <SectionHeading
+      eyebrow="Contact"
+      title="お問い合わせ"
+      intro="相談内容を送っていただければ、確認後に返信します。"
+    />
+    {
+      notice && (
+        <p class={`notice notice--${notice.tone}`} role={notice.tone === "error" ? "alert" : "status"}>
+          {notice.text}
+        </p>
+      )
+    }
+    <form class="contact-form stack" method="post" action="/api/contact">
+      <div class="field">
+        <label for="name">お名前</label>
+        <input id="name" name="name" autocomplete="name" required />
+      </div>
+      <div class="field">
+        <label for="email">メールアドレス</label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          autocomplete="email"
+          inputmode="email"
+          required
+        />
+      </div>
+      <div class="field honeyfield">
+        <label for="company">会社名</label>
+        <input
+          id="company"
+          name="company"
+          tabindex="-1"
+          autocomplete="organization"
+        />
+      </div>
+      <div class="field">
+        <label for="message">内容</label>
+        <textarea id="message" name="message" rows="8" required></textarea>
+      </div>
+      <button class="button" type="submit">送信する</button>
+      <p class="form-note">
+        送信先は Cloudflare Worker 上の API です。返信先のメールアドレスを確認してから送信してください。
+      </p>
+    </form>
+  </section>
+</BaseLayout>

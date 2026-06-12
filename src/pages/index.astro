@@ -1,0 +1,96 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SectionHeading from "../components/SectionHeading.astro";
+import PostCard from "../components/PostCard.astro";
+import WorkCard from "../components/WorkCard.astro";
+import { getPublishedPosts, getWorks } from "../lib/content";
+import { siteMeta } from "../lib/site";
+
+const posts = (await getPublishedPosts()).slice(0, 3);
+const works = await getWorks();
+const featuredWorks = works.filter((work) => work.data.featured).slice(0, 3);
+---
+
+<BaseLayout>
+  <section class="hero">
+    <p class="eyebrow">Personal Homepage</p>
+    <h1>読みやすく、更新しやすく、長く使える個人サイト。</h1>
+    <p class="lead">
+      制作、設計、文章を横断して記録するための個人ホームページです。DADS
+      を踏まえた、静かで明快な情報設計を目指しています。
+    </p>
+    <div class="button-row">
+      <a class="button" href="/blog/">ブログを見る</a>
+      <a class="button button--secondary" href="/contact/">問い合わせる</a>
+    </div>
+    <div class="hero-meta">
+      <div>
+        <dt>拠点</dt>
+        <dd>Tokyo / Remote</dd>
+      </div>
+      <div>
+        <dt>関心</dt>
+        <dd>Design systems, frontend, writing</dd>
+      </div>
+      <div>
+        <dt>連絡先</dt>
+        <dd><a href="mailto:hello@example.com">hello@example.com</a></dd>
+      </div>
+    </div>
+  </section>
+
+  <section class="page-section">
+    <SectionHeading
+      eyebrow="About"
+      title="自己紹介"
+      intro="ウェブの情報設計、実装、運用の間をつなぐ仕事をしています。見た目だけではなく、更新のしやすさとアクセシビリティを設計に含めます。"
+    />
+    <div class="info-panel">
+      <p>
+        このサイトでは、制作物そのものと、その背景にある判断や試行錯誤を並べて記録します。
+        単発のポートフォリオではなく、蓄積される公開ノートとして育てていく前提です。
+      </p>
+      <ul class="plain-list">
+        <li>フロントエンド実装</li>
+        <li>デザインシステム整備</li>
+        <li>技術文書と運用設計</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="page-section">
+    <SectionHeading
+      eyebrow="Works"
+      title="代表作品"
+      intro="最近の制作物や継続的に育てている取り組みをまとめています。"
+    />
+    <div class="grid">
+      {featuredWorks.map((work) => <WorkCard work={work} />)}
+    </div>
+  </section>
+
+  <section class="page-section">
+    <SectionHeading
+      eyebrow="Blog"
+      title="最新記事"
+      intro="設計判断、実装メモ、運用で気づいたことを記事として残しています。"
+    />
+    <div class="stack">
+      {posts.map((post) => <PostCard post={post} />)}
+    </div>
+  </section>
+
+  <section class="page-section cta-panel">
+    <SectionHeading
+      eyebrow="Contact"
+      title="相談や依頼について"
+      intro="制作の相談、登壇や執筆の連絡、共同検討の依頼などを受け付けています。"
+    />
+    <div class="button-row">
+      <a class="button" href="/contact/">問い合わせフォームへ</a>
+      <a class="button button--secondary" href={siteMeta.social[0].href}>
+        GitHub
+      </a>
+    </div>
+  </section>
+</BaseLayout>

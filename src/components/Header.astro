@@ -1,0 +1,31 @@
+---
+import { siteMeta } from "../lib/site";
+
+const normalizePath = (value: string) =>
+  value.endsWith("/") && value !== "/" ? value.slice(0, -1) : value;
+const currentPath = normalizePath(Astro.url.pathname);
+---
+
+<header class="site-header">
+  <div class="container site-header__inner">
+    <a class="site-title" href="/">{siteMeta.author}</a>
+    <nav aria-label="主要メニュー">
+      <ul class="nav-list">
+        {
+          siteMeta.nav.map((item) => (
+            <li>
+              <a
+                href={item.href}
+                aria-current={
+                  currentPath === normalizePath(item.href) ? "page" : undefined
+                }
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+  </div>
+</header>

@@ -1,0 +1,21 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import WorkCard from "../../components/WorkCard.astro";
+import SectionHeading from "../../components/SectionHeading.astro";
+import { getWorks } from "../../lib/content";
+
+const works = await getWorks();
+---
+
+<BaseLayout title="作品" description="作品一覧">
+  <section class="page-section">
+    <SectionHeading
+      eyebrow="Works"
+      title="作品"
+      intro="公開できる制作物、試作、設計メモのまとまりを一覧化しています。"
+    />
+    <div class="grid">
+      {works.map((work) => <WorkCard work={work} />)}
+    </div>
+  </section>
+</BaseLayout>

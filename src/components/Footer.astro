@@ -1,0 +1,17 @@
+---
+import { siteMeta } from "../lib/site";
+---
+
+<footer class="site-footer">
+  <div class="container stack">
+    <p class="eyebrow">連絡先</p>
+    <ul class="footer-links">
+      {
+        siteMeta.social.map((item) => (
+          <li><a href={item.href}>{item.label}</a></li>
+        ))
+      }
+    </ul>
+    <p class="footer-note">© {new Date().getFullYear()} {siteMeta.author}</p>
+  </div>
+</footer>

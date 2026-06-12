@@ -1,0 +1,21 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import PostCard from "../../components/PostCard.astro";
+import SectionHeading from "../../components/SectionHeading.astro";
+import { getPublishedPosts } from "../../lib/content";
+
+const posts = await getPublishedPosts();
+---
+
+<BaseLayout title="ブログ" description="記事一覧">
+  <section class="page-section">
+    <SectionHeading
+      eyebrow="Blog"
+      title="ブログ"
+      intro="設計、実装、文章、公開後の運用に関する記録です。"
+    />
+    <div class="stack">
+      {posts.map((post) => <PostCard post={post} />)}
+    </div>
+  </section>
+</BaseLayout>

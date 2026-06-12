@@ -1,0 +1,31 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import { formatDate } from "../lib/content";
+
+interface Props {
+  title: string;
+  description?: string;
+  date?: Date;
+  tags?: string[];
+}
+
+const { title, description, date, tags = [] } = Astro.props;
+---
+
+<BaseLayout title={title} description={description}>
+  <article class="detail stack">
+    <header class="detail-header stack">
+      {date && <p class="meta">{formatDate(date)}</p>}
+      <h1>{title}</h1>
+      {description && <p class="lead">{description}</p>}
+      {tags.length > 0 && (
+        <ul class="tag-list" aria-label="タグ">
+          {tags.map((tag) => <li>{tag}</li>)}
+        </ul>
+      )}
+    </header>
+    <div class="prose">
+      <slot />
+    </div>
+  </article>
+</BaseLayout>

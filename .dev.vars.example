@@ -1,0 +1,4 @@
+CONTACT_WEBHOOK_URL="https://example.com/webhook"
+GITHUB_OAUTH_CLIENT_ID="your-client-id"
+GITHUB_OAUTH_CLIENT_SECRET="your-client-secret"
+GITHUB_OAUTH_SCOPE="public_repo"
