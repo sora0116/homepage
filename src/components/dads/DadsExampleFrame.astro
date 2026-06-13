@@ -1,0 +1,21 @@
+---
+interface Props {
+  component: string;
+  example: string;
+  height?: string;
+  title?: string;
+}
+
+const { component, example, height = "32rem", title } = Astro.props;
+const src = "/dads-examples/components/" + component + "/" + example + ".html";
+const frameTitle = title || component + " / " + example;
+const frameStyle = `height: ${height};`;
+---
+
+<iframe
+  class="dads-example-frame"
+  src={src}
+  title={frameTitle}
+  loading="lazy"
+  style={frameStyle}
+></iframe>

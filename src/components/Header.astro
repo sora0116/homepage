@@ -20,11 +20,12 @@ const currentPath = normalizePath(Astro.url.pathname);
         <span class="site-nav__toggle-label site-nav__toggle-label--open">閉じる</span>
       </summary>
       <nav class="site-nav__panel" aria-label="主要メニュー">
-        <ul class="nav-list">
+        <ul class="nav-list dads-horizontal-menu">
           {
             siteMeta.nav.map((item) => (
-              <li>
+              <li class="dads-horizontal-menu__item">
                 <a
+                  class="dads-horizontal-menu__item-inner"
                   href={item.href}
                   aria-current={
                     currentPath === normalizePath(item.href) ? "page" : undefined

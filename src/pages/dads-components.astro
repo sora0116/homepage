@@ -1,0 +1,39 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import DadsExampleFrame from "../components/dads/DadsExampleFrame.astro";
+import { dadsComponentRegistry } from "../lib/dads-component-registry";
+
+const components = Object.entries(dadsComponentRegistry);
+---
+
+<BaseLayout
+  title="DADS Components"
+  description="DADS サンプルコンポーネントのラッパー一覧"
+>
+  <section class="page-section stack">
+    <div class="section-heading">
+      <p class="eyebrow">Component Library</p>
+      <h1 class="dads-heading" data-size="45">DADS Components</h1>
+      <p class="section-intro">
+        `src/components/dads` に生成したラッパーと、元の HTML サンプル一覧です。
+      </p>
+    </div>
+
+    {components.map(([component, examples]) => (
+      <article class="detail stack">
+        <header class="stack">
+          <h2 class="dads-heading" data-size="32">{component}</h2>
+          <p class="meta">{examples.length} examples</p>
+        </header>
+        <div class="stack">
+          {examples.map((example) => (
+            <section class="stack">
+              <p class="meta">{example}</p>
+              <DadsExampleFrame component={component} example={example} />
+            </section>
+          ))}
+        </div>
+      </article>
+    ))}
+  </section>
+</BaseLayout>

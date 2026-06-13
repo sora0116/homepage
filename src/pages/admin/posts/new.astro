@@ -1,5 +1,7 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
+import DadsButton from "../../../components/DadsButton.astro";
+import NoticeBanner from "../../../components/NoticeBanner.astro";
 import SectionHeading from "../../../components/SectionHeading.astro";
 import AdminMarkdownField from "../../../components/AdminMarkdownField.astro";
 import { getAdminPageData, toDateTimeLocal } from "../../../lib/admin-page";
@@ -10,52 +12,49 @@ const { session, db, status, error } = await getAdminPageData(Astro);
 <BaseLayout title="New Post" description="Create post">
   <section class="page-section">
     <SectionHeading eyebrow="Admin" title="新規記事" intro="新しい記事を作成します。" />
-    {!db && <p class="notice notice--error" role="alert">D1 binding `DB` が見つかりません。</p>}
-    {status && <p class="notice notice--success" role="status">更新を反映しました。</p>}
-    {error && <p class="notice notice--error" role="alert">{error === "post_slug" ? "記事 slug が重複しています。" : error === "invalid" ? "入力内容を確認してください。" : "ログインが必要です。"}</p>}
+    {!db && <NoticeBanner tone="error" text="D1 binding `DB` が見つかりません。" />}
+    {status && <NoticeBanner tone="success" text="更新を反映しました。" />}
+    {error && <NoticeBanner tone="error" text={error === "post_slug" ? "記事 slug が重複しています。" : error === "invalid" ? "入力内容を確認してください。" : "ログインが必要です。"} />}
 
     {!session ? (
       <div class="admin-shell stack">
         <p>先に管理画面へログインしてください。</p>
-        <a class="button" href="/admin">/admin へ戻る</a>
+        <DadsButton href="/admin" label="/admin へ戻る" />
       </div>
     ) : (
       <div class="admin-shell stack">
         <div class="button-row">
-          <a class="button button--secondary" href="/admin/posts">記事一覧へ戻る</a>
+          <DadsButton href="/admin/posts" tone="outline" label="記事一覧へ戻る" />
         </div>
         <form class="admin-form stack" method="post" action="/api/admin/posts">
           <input type="hidden" name="_action" value="create" />
           <input type="hidden" name="returnTo" value="/admin/posts/new" />
-          <div class="field">
-            <label for="slug">slug</label>
-            <input id="slug" name="slug" required />
+          <div class="dads-form-control-label app-field" data-size="md">
+            <label class="dads-form-control-label__label" for="slug">slug</label>
+            <span class="dads-input-text"><input class="dads-input-text__input" data-size="md" id="slug" name="slug" required /></span>
           </div>
-          <div class="field">
-            <label for="title">タイトル</label>
-            <input id="title" name="title" required />
+          <div class="dads-form-control-label app-field" data-size="md">
+            <label class="dads-form-control-label__label" for="title">タイトル</label>
+            <span class="dads-input-text"><input class="dads-input-text__input" data-size="md" id="title" name="title" required /></span>
           </div>
-          <div class="field">
-            <label for="description">概要</label>
-            <textarea id="description" name="description" rows="3" required></textarea>
+          <div class="dads-form-control-label app-field" data-size="md">
+            <label class="dads-form-control-label__label" for="description">概要</label>
+            <span class="dads-textarea"><textarea class="dads-textarea__textarea" id="description" name="description" rows="3" required></textarea></span>
           </div>
-          <div class="field">
-            <label for="tags">タグ</label>
-            <input id="tags" name="tags" placeholder="Design, Astro" />
+          <div class="dads-form-control-label app-field" data-size="md">
+            <label class="dads-form-control-label__label" for="tags">タグ</label>
+            <span class="dads-input-text"><input class="dads-input-text__input" data-size="md" id="tags" name="tags" placeholder="Design, Astro" /></span>
           </div>
-          <div class="field">
-            <label for="status">状態</label>
-            <select id="status" name="status">
-              <option value="draft">draft</option>
-              <option value="published">published</option>
-            </select>
+          <div class="dads-form-control-label app-field" data-size="md">
+            <label class="dads-form-control-label__label" for="status">状態</label>
+            <span class="dads-select"><span class="dads-select__control"><select class="dads-select__select" data-size="md" id="status" name="status"><option value="draft">draft</option><option value="published">published</option></select><svg class="dads-select__chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17L3 8L4 7L12 15L20 7L21 8L12 17Z" fill="currentColor"></path></svg></span></span>
           </div>
-          <div class="field">
-            <label for="publishedAt">公開日時</label>
-            <input id="publishedAt" name="publishedAt" type="datetime-local" value={toDateTimeLocal(new Date().toISOString())} required />
+          <div class="dads-form-control-label app-field" data-size="md">
+            <label class="dads-form-control-label__label" for="publishedAt">公開日時</label>
+            <span class="dads-input-text"><input class="dads-input-text__input" data-size="md" id="publishedAt" name="publishedAt" type="datetime-local" value={toDateTimeLocal(new Date().toISOString())} required /></span>
           </div>
           <AdminMarkdownField id="body" name="body" label="本文" rows={12} />
-          <button class="button" type="submit">記事を作成</button>
+          <DadsButton type="submit" label="記事を作成" />
         </form>
       </div>
     )}

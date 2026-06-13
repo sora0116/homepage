@@ -1,0 +1,18 @@
+---
+import DadsExampleFrame from "./DadsExampleFrame.astro";
+
+interface Props {
+  example?: string;
+  height?: string;
+  title?: string;
+}
+
+const { example = "playground", height, title } = Astro.props;
+---
+
+<DadsExampleFrame
+  component="file-upload"
+  example={example}
+  height={height}
+  title={title}
+/>

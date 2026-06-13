@@ -1,0 +1,36 @@
+---
+interface Item {
+  href?: string;
+  label: string;
+}
+
+interface Props {
+  items: Item[];
+}
+
+const { items } = Astro.props;
+---
+
+<nav class="dads-breadcrumb" aria-label="パンくず">
+  <span class="dads-breadcrumb__label">現在地</span>
+  <ol class="dads-breadcrumb__list">
+    {items.map((item, index) => (
+      <>
+        <li class="dads-breadcrumb__item">
+          {item.href ? (
+            <a class="dads-breadcrumb__link" href={item.href}>
+              {item.label}
+            </a>
+          ) : (
+            <span>{item.label}</span>
+          )}
+        </li>
+        {index < items.length - 1 && (
+          <li class="dads-breadcrumb__item dads-breadcrumb__separator" aria-hidden="true">
+            <span class="dads-breadcrumb__separator-icon">›</span>
+          </li>
+        )}
+      </>
+    ))}
+  </ol>
+</nav>

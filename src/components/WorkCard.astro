@@ -9,14 +9,17 @@ interface Props {
 const { work } = Astro.props;
 ---
 
-<article class="card">
+<article class="card dads-card">
   <p class="meta">{formatDate(work.publishedAt)}</p>
-  <h3><a href={`/works/${work.slug}/`}>{work.title}</a></h3>
+  <h3 class="dads-card__title"><a href={`/works/${work.slug}/`}>{work.title}</a></h3>
   <p>{work.summary}</p>
   <ul class="tag-list" aria-label="タグ">
     {work.tags.map((tag) => <li>{tag}</li>)}
   </ul>
   <div class="card-links">
-    {work.links.map((link) => <a href={link.href}>{link.label}</a>)}
+    <a class="dads-utility-link" href={`/works/${work.slug}/`}>
+      <span class="dads-utility-link__label">作品詳細を見る</span>
+    </a>
+    {work.links.map((link) => <a class="dads-utility-link" href={link.href}><span class="dads-utility-link__label">{link.label}</span></a>)}
   </div>
 </article>

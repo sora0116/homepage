@@ -25,7 +25,7 @@ export function initMarpDecks(root: ParentNode = document) {
 
     deck.addEventListener("click", async (event) => {
       const target = event.target;
-      if (!(target instanceof HTMLElement)) return;
+      if (!(target instanceof Element)) return;
       const button = target.closest("[data-marp-action]");
       if (button instanceof HTMLButtonElement) {
         deck.focus();
@@ -144,16 +144,18 @@ function updateDeck(
     slide.setAttribute("aria-hidden", isVisible ? "false" : "true");
   }
 
-  elements.listButton?.classList.toggle("is-active", view === "list");
-  elements.presentationButton?.classList.toggle("is-active", view === "presentation");
+  syncModeButton(elements.listButton, view === "list");
+  syncModeButton(elements.presentationButton, view === "presentation");
 
   if (elements.previousButton) {
     elements.previousButton.disabled = view !== "presentation" || activeSlide === 0;
+    elements.previousButton.setAttribute("aria-disabled", String(elements.previousButton.disabled));
   }
 
   if (elements.nextButton) {
     elements.nextButton.disabled =
       view !== "presentation" || activeSlide === elements.slides.length - 1;
+    elements.nextButton.setAttribute("aria-disabled", String(elements.nextButton.disabled));
   }
 
   if (elements.status) {
@@ -162,6 +164,12 @@ function updateDeck(
         ? `${activeSlide + 1} / ${elements.slides.length}`
         : `全 ${elements.slides.length} 枚`;
   }
+}
+
+function syncModeButton(button: HTMLButtonElement | null, active: boolean) {
+  if (!button) return;
+  button.dataset.active = active ? "true" : "false";
+  button.dataset.type = active ? "solid-fill" : "outline";
 }
 
 async function runDeckAction(
@@ -178,11 +186,13 @@ async function runDeckAction(
   }
 
   if (action === "prev") {
+    if (currentView !== "presentation") return;
     updateDeck(deck, elements, currentView, currentIndex - 1);
     return;
   }
 
   if (action === "next") {
+    if (currentView !== "presentation") return;
     updateDeck(deck, elements, currentView, currentIndex + 1);
     return;
   }

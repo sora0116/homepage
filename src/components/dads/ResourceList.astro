@@ -1,0 +1,18 @@
+---
+import DadsExampleFrame from "./DadsExampleFrame.astro";
+
+interface Props {
+  example?: string;
+  height?: string;
+  title?: string;
+}
+
+const { example = "multiple-items", height, title } = Astro.props;
+---
+
+<DadsExampleFrame
+  component="resource-list"
+  example={example}
+  height={height}
+  title={title}
+/>

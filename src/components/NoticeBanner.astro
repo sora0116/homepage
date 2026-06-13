@@ -1,0 +1,33 @@
+---
+interface Props {
+  tone?: "info" | "success" | "warning" | "error";
+  title?: string;
+  text: string;
+}
+
+const { tone = "info", title, text } = Astro.props;
+
+const labels = {
+  info: "お知らせ",
+  success: "完了",
+  warning: "注意",
+  error: "エラー"
+} as const;
+---
+
+<div class="dads-notification-banner app-notice" data-style="standard" data-type={tone}>
+  <h2 class="dads-notification-banner__heading">
+    <span class="dads-notification-banner__icon app-notice__icon" aria-hidden="true">
+      {tone === "success" && "○"}
+      {tone === "warning" && "!"}
+      {tone === "error" && "!"}
+      {tone === "info" && "i"}
+    </span>
+    <span class="dads-notification-banner__heading-text">
+      {title || labels[tone]}
+    </span>
+  </h2>
+  <div class="dads-notification-banner__body">
+    <p>{text}</p>
+  </div>
+</div>

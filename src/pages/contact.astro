@@ -1,6 +1,8 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import DadsButton from "../components/DadsButton.astro";
 import SectionHeading from "../components/SectionHeading.astro";
+import NoticeBanner from "../components/NoticeBanner.astro";
 
 const status = Astro.url.searchParams.get("status");
 const notices = {
@@ -33,19 +35,22 @@ const notice = status ? notices[status as keyof typeof notices] : undefined;
     />
     {
       notice && (
-        <p class={`notice notice--${notice.tone}`} role={notice.tone === "error" ? "alert" : "status"}>
-          {notice.text}
-        </p>
+        <NoticeBanner tone={notice.tone === "success" ? "success" : "error"} text={notice.text} />
       )
     }
     <form class="contact-form stack" method="post" action="/api/contact">
-      <div class="field">
-        <label for="name">お名前</label>
-        <input id="name" name="name" autocomplete="name" required />
+      <div class="dads-form-control-label app-field" data-size="md">
+        <label class="dads-form-control-label__label" for="name">お名前<span class="dads-form-control-label__requirement" data-required="true">※必須</span></label>
+        <span class="dads-input-text">
+          <input class="dads-input-text__input" data-size="md" id="name" name="name" autocomplete="name" required />
+        </span>
       </div>
-      <div class="field">
-        <label for="email">メールアドレス</label>
-        <input
+      <div class="dads-form-control-label app-field" data-size="md">
+        <label class="dads-form-control-label__label" for="email">メールアドレス<span class="dads-form-control-label__requirement" data-required="true">※必須</span></label>
+        <span class="dads-input-text">
+          <input
+            class="dads-input-text__input"
+            data-size="md"
           id="email"
           name="email"
           type="email"
@@ -53,6 +58,7 @@ const notice = status ? notices[status as keyof typeof notices] : undefined;
           inputmode="email"
           required
         />
+        </span>
       </div>
       <div class="field honeyfield">
         <label for="company">会社名</label>
@@ -63,11 +69,14 @@ const notice = status ? notices[status as keyof typeof notices] : undefined;
           autocomplete="organization"
         />
       </div>
-      <div class="field">
-        <label for="message">内容</label>
-        <textarea id="message" name="message" rows="8" required></textarea>
+      <div class="dads-form-control-label app-field" data-size="md">
+        <label class="dads-form-control-label__label" for="message">内容<span class="dads-form-control-label__requirement" data-required="true">※必須</span></label>
+        <p class="dads-form-control-label__support-text">相談内容や依頼内容をそのまま入力してください。</p>
+        <span class="dads-textarea">
+          <textarea class="dads-textarea__textarea" id="message" name="message" rows="8" required></textarea>
+        </span>
       </div>
-      <button class="button" type="submit">送信する</button>
+      <DadsButton type="submit" label="送信する" />
       <p class="form-note">
         送信先は Cloudflare Worker 上の API です。返信先のメールアドレスを確認してから送信してください。
       </p>

@@ -1,5 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import DadsButton from "../components/DadsButton.astro";
+import NoticeBanner from "../components/NoticeBanner.astro";
 import SectionHeading from "../components/SectionHeading.astro";
 import { getAdminPageData } from "../lib/admin-page";
 
@@ -15,26 +17,28 @@ const { session, db, status, error, posts, works, inquiries } = await getAdminPa
     />
 
     {!db && (
-      <p class="notice notice--error" role="alert">
-        D1 binding `DB` が見つかりません。Cloudflare Worker の Variables and
-        Bindings に D1 を追加してください。
-      </p>
+      <NoticeBanner tone="error" text="D1 binding `DB` が見つかりません。Cloudflare Worker の Variables and Bindings に D1 を追加してください。" />
     )}
 
     {status && (
-      <p class="notice notice--success" role="status">
-        更新を反映しました。
-      </p>
+      <NoticeBanner tone="success" text="更新を反映しました。" />
     )}
 
     {error && (
-      <p class="notice notice--error" role="alert">
-        {error === "unauthorized" && "ログインが必要です。"}
-        {error === "forbidden" && "この GitHub アカウントには管理権限がありません。"}
-        {error === "post_slug" && "記事 slug が重複しています。"}
-        {error === "work_slug" && "作品 slug が重複しています。"}
-        {error === "invalid" && "入力内容を確認してください。"}
-      </p>
+      <NoticeBanner
+        tone="error"
+        text={
+          error === "unauthorized"
+            ? "ログインが必要です。"
+            : error === "forbidden"
+              ? "この GitHub アカウントには管理権限がありません。"
+              : error === "post_slug"
+                ? "記事 slug が重複しています。"
+                : error === "work_slug"
+                  ? "作品 slug が重複しています。"
+                  : "入力内容を確認してください。"
+        }
+      />
     )}
 
     {!session ? (
@@ -43,9 +47,7 @@ const { session, db, status, error, posts, works, inquiries } = await getAdminPa
           GitHub OAuth で管理画面へログインします。認証後はこのページへ戻り、更新操作ができます。
         </p>
         <div class="button-row">
-          <a class="button" href="/api/admin/auth/login">
-            GitHub でログイン
-          </a>
+          <DadsButton href="/api/admin/auth/login" label="GitHub でログイン" />
         </div>
       </div>
     ) : (
@@ -57,55 +59,53 @@ const { session, db, status, error, posts, works, inquiries } = await getAdminPa
             <p class="meta">@{session.login}</p>
           </div>
           <div class="button-row">
-            <a class="button button--secondary" href="/api/admin/auth/logout">
-              ログアウト
-            </a>
+            <DadsButton href="/api/admin/auth/logout" tone="outline" label="ログアウト" />
           </div>
         </div>
 
         <div class="admin-grid">
           <article class="admin-card stack">
             <p class="eyebrow">Posts</p>
-            <h2>記事管理</h2>
+            <h2 class="dads-heading" data-size="24">記事管理</h2>
             <p>記事の作成、公開切替、更新、削除を行います。</p>
             <p class="meta">
               全 {posts.length} 件 / 公開 {posts.filter((post) => post.status === "published").length} 件
             </p>
             <div class="button-row">
-              <a class="button" href="/admin/posts">記事を管理</a>
+              <DadsButton href="/admin/posts" label="記事を管理" />
             </div>
           </article>
 
           <article class="admin-card stack">
             <p class="eyebrow">Works</p>
-            <h2>作品管理</h2>
+            <h2 class="dads-heading" data-size="24">作品管理</h2>
             <p>作品一覧とトップの featured 表示を管理します。</p>
             <p class="meta">
               全 {works.length} 件 / featured {works.filter((work) => work.featured).length} 件
             </p>
             <div class="button-row">
-              <a class="button" href="/admin/works">作品を管理</a>
+              <DadsButton href="/admin/works" label="作品を管理" />
             </div>
           </article>
 
           <article class="admin-card stack">
             <p class="eyebrow">Homepage</p>
-            <h2>トップページ設定</h2>
+            <h2 class="dads-heading" data-size="24">トップページ設定</h2>
             <p>ヒーロー文言、自己紹介、連絡導線などの設定を更新します。</p>
             <div class="button-row">
-              <a class="button" href="/admin/homepage">設定を編集</a>
+              <DadsButton href="/admin/homepage" label="設定を編集" />
             </div>
           </article>
 
           <article class="admin-card stack">
             <p class="eyebrow">Inquiries</p>
-            <h2>お問い合わせ管理</h2>
+            <h2 class="dads-heading" data-size="24">お問い合わせ管理</h2>
             <p>受信した問い合わせ内容を確認し、対応状況を切り替えます。</p>
             <p class="meta">
               全 {inquiries.length} 件 / 未対応 {inquiries.filter((inquiry) => inquiry.status === "new").length} 件
             </p>
             <div class="button-row">
-              <a class="button" href="/admin/inquiries">お問い合わせを見る</a>
+              <DadsButton href="/admin/inquiries" label="お問い合わせを見る" />
             </div>
           </article>
         </div>

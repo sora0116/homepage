@@ -1,5 +1,7 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import DadsButton from "../../components/DadsButton.astro";
+import NoticeBanner from "../../components/NoticeBanner.astro";
 import SectionHeading from "../../components/SectionHeading.astro";
 import { getAdminPageData } from "../../lib/admin-page";
 import { formatDateTime } from "../../lib/db";
@@ -25,50 +27,57 @@ const {
     />
 
     {!db && (
-      <p class="notice notice--error" role="alert">
-        D1 binding `DB` が見つかりません。Cloudflare Worker の Variables and Bindings に D1 を追加してください。
-      </p>
+      <NoticeBanner tone="error" text="D1 binding `DB` が見つかりません。Cloudflare Worker の Variables and Bindings に D1 を追加してください。" />
     )}
 
-    {status && <p class="notice notice--success" role="status">更新を反映しました。</p>}
-    {error && <p class="notice notice--error" role="alert">{error === "invalid" ? "入力内容を確認してください。" : "ログインが必要です。"}</p>}
+    {status && <NoticeBanner tone="success" text="更新を反映しました。" />}
+    {error && <NoticeBanner tone="error" text={error === "invalid" ? "入力内容を確認してください。" : "ログインが必要です。"} />}
 
     {!session ? (
       <div class="admin-shell stack">
         <p>先に管理画面へログインしてください。</p>
         <div class="button-row">
-          <a class="button" href="/admin">/admin へ戻る</a>
+          <DadsButton href="/admin" label="/admin へ戻る" />
         </div>
       </div>
     ) : (
       <div class="admin-shell stack">
         <div class="button-row">
-          <a class="button button--secondary" href="/admin">管理トップへ戻る</a>
+          <DadsButton href="/admin" tone="outline" label="管理トップへ戻る" />
         </div>
 
         <form class="admin-filter" method="get" action="/admin/inquiries">
-          <div class="field">
-            <label for="q">検索</label>
-            <input
-              id="q"
-              name="q"
-              value={inquiryQuery}
-              placeholder="名前、メール、本文で検索"
-            />
+          <div class="dads-form-control-label app-field" data-size="md">
+            <label class="dads-form-control-label__label" for="q">検索</label>
+            <span class="dads-input-text">
+              <input
+                class="dads-input-text__input"
+                data-size="md"
+                id="q"
+                name="q"
+                value={inquiryQuery}
+                placeholder="名前、メール、本文で検索"
+              />
+            </span>
           </div>
-          <div class="field">
-            <label for="status_filter">状態</label>
-            <select id="status_filter" name="status_filter">
-              <option value="">すべて</option>
-              <option value="new" selected={inquiryStatusFilter === "new"}>new</option>
-              <option value="in_progress" selected={inquiryStatusFilter === "in_progress"}>in_progress</option>
-              <option value="replied" selected={inquiryStatusFilter === "replied"}>replied</option>
-              <option value="archived" selected={inquiryStatusFilter === "archived"}>archived</option>
-            </select>
+          <div class="dads-form-control-label app-field" data-size="md">
+            <label class="dads-form-control-label__label" for="status_filter">状態</label>
+            <span class="dads-select">
+              <span class="dads-select__control">
+                <select class="dads-select__select" data-size="md" id="status_filter" name="status_filter">
+                  <option value="">すべて</option>
+                  <option value="new" selected={inquiryStatusFilter === "new"}>new</option>
+                  <option value="in_progress" selected={inquiryStatusFilter === "in_progress"}>in_progress</option>
+                  <option value="replied" selected={inquiryStatusFilter === "replied"}>replied</option>
+                  <option value="archived" selected={inquiryStatusFilter === "archived"}>archived</option>
+                </select>
+                <svg class="dads-select__chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17L3 8L4 7L12 15L20 7L21 8L12 17Z" fill="currentColor"></path></svg>
+              </span>
+            </span>
           </div>
           <div class="button-row">
-            <button class="button" type="submit">絞り込む</button>
-            <a class="button button--secondary" href="/admin/inquiries">リセット</a>
+            <DadsButton type="submit" label="絞り込む" />
+            <DadsButton href="/admin/inquiries" tone="outline" label="リセット" />
           </div>
         </form>
 
@@ -91,19 +100,24 @@ const {
                 <input type="hidden" name="id" value={inquiry.id} />
                 <div class="admin-inquiry-header">
                   <div class="stack">
-                    <h3>{inquiry.name}</h3>
+                    <h3 class="dads-heading" data-size="20">{inquiry.name}</h3>
                     <p class="meta">
                       {formatDateTime(inquiry.createdAt)} / {inquiry.email}
                     </p>
                   </div>
-                  <div class="field">
-                    <label>対応状況</label>
-                    <select name="status">
-                      <option value="new" selected={inquiry.status === "new"}>new</option>
-                      <option value="in_progress" selected={inquiry.status === "in_progress"}>in_progress</option>
-                      <option value="replied" selected={inquiry.status === "replied"}>replied</option>
-                      <option value="archived" selected={inquiry.status === "archived"}>archived</option>
-                    </select>
+                  <div class="dads-form-control-label app-field" data-size="sm">
+                    <label class="dads-form-control-label__label">対応状況</label>
+                    <span class="dads-select">
+                      <span class="dads-select__control">
+                        <select class="dads-select__select" data-size="sm" name="status">
+                          <option value="new" selected={inquiry.status === "new"}>new</option>
+                          <option value="in_progress" selected={inquiry.status === "in_progress"}>in_progress</option>
+                          <option value="replied" selected={inquiry.status === "replied"}>replied</option>
+                          <option value="archived" selected={inquiry.status === "archived"}>archived</option>
+                        </select>
+                        <svg class="dads-select__chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17L3 8L4 7L12 15L20 7L21 8L12 17Z" fill="currentColor"></path></svg>
+                      </span>
+                    </span>
                   </div>
                 </div>
                 <p class="meta">source: {inquiry.source}</p>
@@ -111,8 +125,8 @@ const {
                   <p>{inquiry.message}</p>
                 </div>
                 <div class="button-row">
-                  <button class="button" type="submit">状態を保存</button>
-                  <a class="button button--secondary" href={`mailto:${inquiry.email}`}>返信する</a>
+                  <DadsButton type="submit" label="状態を保存" />
+                  <DadsButton href={`mailto:${inquiry.email}`} tone="outline" label="返信する" />
                 </div>
               </form>
             ))}

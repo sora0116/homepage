@@ -10,16 +10,19 @@ interface Props {
 const { id, name, label, rows = 10, value = "" } = Astro.props;
 ---
 
-<div class="field">
-  <label for={id}>{label}</label>
+<div class="dads-form-control-label app-field" data-size="md">
+  <label class="dads-form-control-label__label" for={id}>{label}</label>
   <div class="markdown-editor" data-markdown-editor>
-    <textarea
-      id={id}
-      name={name}
-      rows={rows}
-      required
-      data-markdown-input
-    >{value}</textarea>
+    <span class="dads-textarea app-textarea">
+      <textarea
+        id={id}
+        name={name}
+        rows={rows}
+        required
+        class="dads-textarea__textarea"
+        data-markdown-input
+      >{value}</textarea>
+    </span>
     <div class="markdown-preview-wrap">
       <p class="meta">プレビュー</p>
       <div class="markdown-preview prose" data-markdown-preview></div>

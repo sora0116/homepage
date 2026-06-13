@@ -17,11 +17,24 @@ if (!post) {
       description={post.description}
       date={post.publishedAt}
       tags={post.tags}
+      breadcrumbs={[
+        { href: "/", label: "ホーム" },
+        { href: "/blog/", label: "ブログ" },
+        { label: post.title }
+      ]}
     >
       <Fragment set:html={renderMarkdown(post.body)} />
     </MarkdownPageLayout>
   ) : (
-    <MarkdownPageLayout title="記事が見つかりません" description="Not Found">
+    <MarkdownPageLayout
+      title="記事が見つかりません"
+      description="Not Found"
+      breadcrumbs={[
+        { href: "/", label: "ホーム" },
+        { href: "/blog/", label: "ブログ" },
+        { label: "Not Found" }
+      ]}
+    >
       <p>指定された記事は存在しないか、まだ公開されていません。</p>
     </MarkdownPageLayout>
   )

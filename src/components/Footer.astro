@@ -8,7 +8,7 @@ import { siteMeta } from "../lib/site";
     <ul class="footer-links">
       {
         siteMeta.social.map((item) => (
-          <li><a href={item.href}>{item.label}</a></li>
+          <li><a class="dads-utility-link" href={item.href}><span class="dads-utility-link__label">{item.label}</span></a></li>
         ))
       }
     </ul>

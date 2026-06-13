@@ -1,0 +1,18 @@
+---
+import DadsExampleFrame from "./DadsExampleFrame.astro";
+
+interface Props {
+  example?: string;
+  height?: string;
+  title?: string;
+}
+
+const { example = "error", height, title } = Astro.props;
+---
+
+<DadsExampleFrame
+  component="notification-banner"
+  example={example}
+  height={height}
+  title={title}
+/>

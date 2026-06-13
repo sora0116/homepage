@@ -1,0 +1,18 @@
+---
+import DadsExampleFrame from "./DadsExampleFrame.astro";
+
+interface Props {
+  example?: string;
+  height?: string;
+  title?: string;
+}
+
+const { example = "arrow-button", height, title } = Astro.props;
+---
+
+<DadsExampleFrame
+  component="page-navigation"
+  example={example}
+  height={height}
+  title={title}
+/>

@@ -9,11 +9,14 @@ interface Props {
 const { post } = Astro.props;
 ---
 
-<article class="card">
+<article class="card dads-card">
   <p class="meta">{formatDate(post.publishedAt)}</p>
-  <h3><a href={`/blog/${post.slug}/`}>{post.title}</a></h3>
+  <h3 class="dads-card__title"><a href={`/blog/${post.slug}/`}>{post.title}</a></h3>
   <p>{post.description}</p>
   <ul class="tag-list" aria-label="タグ">
     {post.tags.map((tag) => <li>{tag}</li>)}
   </ul>
+  <a class="dads-utility-link" href={`/blog/${post.slug}/`}>
+    <span class="dads-utility-link__label">記事を読む</span>
+  </a>
 </article>

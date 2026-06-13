@@ -1,5 +1,7 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
+import DadsButton from "../../../components/DadsButton.astro";
+import NoticeBanner from "../../../components/NoticeBanner.astro";
 import SectionHeading from "../../../components/SectionHeading.astro";
 import AdminMarkdownField from "../../../components/AdminMarkdownField.astro";
 import { getAdminPageData, toDateTimeLocal, toTagsInput } from "../../../lib/admin-page";
@@ -13,55 +15,52 @@ const post = session ? await getPostById(db, id) : null;
 <BaseLayout title="Edit Post" description="Edit post">
   <section class="page-section">
     <SectionHeading eyebrow="Admin" title="記事編集" intro="選択した記事だけに集中して編集します。" />
-    {!db && <p class="notice notice--error" role="alert">D1 binding `DB` が見つかりません。</p>}
-    {status && <p class="notice notice--success" role="status">更新を反映しました。</p>}
-    {error && <p class="notice notice--error" role="alert">{error === "post_slug" ? "記事 slug が重複しています。" : error === "invalid" ? "入力内容を確認してください。" : "ログインが必要です。"}</p>}
+    {!db && <NoticeBanner tone="error" text="D1 binding `DB` が見つかりません。" />}
+    {status && <NoticeBanner tone="success" text="更新を反映しました。" />}
+    {error && <NoticeBanner tone="error" text={error === "post_slug" ? "記事 slug が重複しています。" : error === "invalid" ? "入力内容を確認してください。" : "ログインが必要です。"} />}
 
     {!session ? (
       <div class="admin-shell stack">
         <p>先に管理画面へログインしてください。</p>
-        <a class="button" href="/admin">/admin へ戻る</a>
+        <DadsButton href="/admin" label="/admin へ戻る" />
       </div>
     ) : !post ? (
       <div class="admin-shell stack">
         <p>指定した記事が見つかりません。</p>
-        <a class="button" href="/admin/posts">記事一覧へ戻る</a>
+        <DadsButton href="/admin/posts" label="記事一覧へ戻る" />
       </div>
     ) : (
       <div class="admin-shell stack">
         <div class="button-row">
-          <a class="button button--secondary" href="/admin/posts">記事一覧へ戻る</a>
-          <a class="button button--secondary" href={`/blog/${post.slug}/`}>公開ページ</a>
+          <DadsButton href="/admin/posts" tone="outline" label="記事一覧へ戻る" />
+          <DadsButton href={`/blog/${post.slug}/`} tone="outline" label="公開ページ" />
         </div>
         <form class="admin-form stack" method="post" action="/api/admin/posts">
           <input type="hidden" name="id" value={post.id} />
           <input type="hidden" name="returnTo" value={`/admin/posts/${post.id}`} />
-          <div class="field">
-            <label for="slug">slug</label>
-            <input id="slug" name="slug" value={post.slug} required />
+          <div class="dads-form-control-label app-field" data-size="md">
+            <label class="dads-form-control-label__label" for="slug">slug</label>
+            <span class="dads-input-text"><input class="dads-input-text__input" data-size="md" id="slug" name="slug" value={post.slug} required /></span>
           </div>
-          <div class="field">
-            <label for="title">タイトル</label>
-            <input id="title" name="title" value={post.title} required />
+          <div class="dads-form-control-label app-field" data-size="md">
+            <label class="dads-form-control-label__label" for="title">タイトル</label>
+            <span class="dads-input-text"><input class="dads-input-text__input" data-size="md" id="title" name="title" value={post.title} required /></span>
           </div>
-          <div class="field">
-            <label for="description">概要</label>
-            <textarea id="description" name="description" rows="3" required>{post.description}</textarea>
+          <div class="dads-form-control-label app-field" data-size="md">
+            <label class="dads-form-control-label__label" for="description">概要</label>
+            <span class="dads-textarea"><textarea class="dads-textarea__textarea" id="description" name="description" rows="3" required>{post.description}</textarea></span>
           </div>
-          <div class="field">
-            <label for="tags">タグ</label>
-            <input id="tags" name="tags" value={toTagsInput(post.tags)} />
+          <div class="dads-form-control-label app-field" data-size="md">
+            <label class="dads-form-control-label__label" for="tags">タグ</label>
+            <span class="dads-input-text"><input class="dads-input-text__input" data-size="md" id="tags" name="tags" value={toTagsInput(post.tags)} /></span>
           </div>
-          <div class="field">
-            <label for="status">状態</label>
-            <select id="status" name="status">
-              <option value="draft" selected={post.status === "draft"}>draft</option>
-              <option value="published" selected={post.status === "published"}>published</option>
-            </select>
+          <div class="dads-form-control-label app-field" data-size="md">
+            <label class="dads-form-control-label__label" for="status">状態</label>
+            <span class="dads-select"><span class="dads-select__control"><select class="dads-select__select" data-size="md" id="status" name="status"><option value="draft" selected={post.status === "draft"}>draft</option><option value="published" selected={post.status === "published"}>published</option></select><svg class="dads-select__chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17L3 8L4 7L12 15L20 7L21 8L12 17Z" fill="currentColor"></path></svg></span></span>
           </div>
-          <div class="field">
-            <label for="publishedAt">公開日時</label>
-            <input id="publishedAt" name="publishedAt" type="datetime-local" value={toDateTimeLocal(post.publishedAt)} required />
+          <div class="dads-form-control-label app-field" data-size="md">
+            <label class="dads-form-control-label__label" for="publishedAt">公開日時</label>
+            <span class="dads-input-text"><input class="dads-input-text__input" data-size="md" id="publishedAt" name="publishedAt" type="datetime-local" value={toDateTimeLocal(post.publishedAt)} required /></span>
           </div>
           <AdminMarkdownField
             id="body"
@@ -71,8 +70,8 @@ const post = session ? await getPostById(db, id) : null;
             value={post.body}
           />
           <div class="button-row">
-            <button class="button" type="submit" name="_action" value="update">保存</button>
-            <button class="button button--secondary" type="submit" name="_action" value="delete">削除</button>
+            <DadsButton type="submit" name="_action" value="update" label="保存" />
+            <DadsButton type="submit" tone="outline" name="_action" value="delete" label="削除" />
           </div>
         </form>
       </div>

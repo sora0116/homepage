@@ -1,5 +1,7 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import DadsButton from "../../components/DadsButton.astro";
+import NoticeBanner from "../../components/NoticeBanner.astro";
 import SectionHeading from "../../components/SectionHeading.astro";
 import { getAdminPageData } from "../../lib/admin-page";
 import { formatDateTime } from "../../lib/db";
@@ -16,26 +18,24 @@ const { session, db, status, error, works } = await getAdminPageData(Astro);
     />
 
     {!db && (
-      <p class="notice notice--error" role="alert">
-        D1 binding `DB` が見つかりません。Cloudflare Worker の Variables and Bindings に D1 を追加してください。
-      </p>
+      <NoticeBanner tone="error" text="D1 binding `DB` が見つかりません。Cloudflare Worker の Variables and Bindings に D1 を追加してください。" />
     )}
 
-    {status && <p class="notice notice--success" role="status">更新を反映しました。</p>}
-    {error && <p class="notice notice--error" role="alert">{error === "work_slug" ? "作品 slug が重複しています。" : error === "invalid" ? "入力内容を確認してください。" : "ログインが必要です。"}</p>}
+    {status && <NoticeBanner tone="success" text="更新を反映しました。" />}
+    {error && <NoticeBanner tone="error" text={error === "work_slug" ? "作品 slug が重複しています。" : error === "invalid" ? "入力内容を確認してください。" : "ログインが必要です。"} />}
 
     {!session ? (
       <div class="admin-shell stack">
         <p>先に管理画面へログインしてください。</p>
         <div class="button-row">
-          <a class="button" href="/admin">/admin へ戻る</a>
+          <DadsButton href="/admin" label="/admin へ戻る" />
         </div>
       </div>
     ) : (
       <div class="admin-shell stack">
         <div class="button-row">
-          <a class="button button--secondary" href="/admin">管理トップへ戻る</a>
-          <a class="button" href="/admin/works/new">新規作品を作成</a>
+          <DadsButton href="/admin" tone="outline" label="管理トップへ戻る" />
+          <DadsButton href="/admin/works/new" label="新規作品を作成" />
         </div>
 
         <div class="admin-list">
@@ -43,7 +43,7 @@ const { session, db, status, error, works } = await getAdminPageData(Astro);
             <article class="admin-card stack">
               <div class="admin-inquiry-header">
                 <div class="stack">
-                  <h3>{work.title}</h3>
+                  <h3 class="dads-heading" data-size="20">{work.title}</h3>
                   <p class="meta">
                     {work.slug} / {formatDateTime(work.publishedAt)}
                   </p>
@@ -52,8 +52,8 @@ const { session, db, status, error, works } = await getAdminPageData(Astro);
               </div>
               <p>{work.summary}</p>
               <div class="button-row">
-                <a class="button" href={`/admin/works/${work.id}`}>この作品を編集</a>
-                <a class="button button--secondary" href={`/works/${work.slug}/`}>公開ページ</a>
+                <DadsButton href={`/admin/works/${work.id}`} label="この作品を編集" />
+                <DadsButton href={`/works/${work.slug}/`} tone="outline" label="公開ページ" />
               </div>
             </article>
           ))}

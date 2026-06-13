@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import DadsButton from "../components/DadsButton.astro";
 import SectionHeading from "../components/SectionHeading.astro";
 import PostCard from "../components/PostCard.astro";
 import WorkCard from "../components/WorkCard.astro";
@@ -16,13 +17,13 @@ const homepage = await getHomepageSettings(db);
 <BaseLayout>
   <section class="hero">
     <p class="eyebrow">{homepage.heroEyebrow}</p>
-    <h1>{homepage.heroTitle}</h1>
+    <h1 class="dads-heading" data-size="57">{homepage.heroTitle}</h1>
     <p class="lead">{homepage.heroIntro}</p>
     <div class="button-row">
-      <a class="button" href="/blog/">ブログを見る</a>
-      <a class="button button--secondary" href="/contact/">問い合わせる</a>
+      <DadsButton href="/blog/" label="ブログを見る" />
+      <DadsButton href="/contact/" tone="outline" label="問い合わせる" />
     </div>
-    <div class="hero-meta">
+    <dl class="hero-meta dads-description-list">
       <div>
         <dt>拠点</dt>
         <dd>{homepage.location}</dd>
@@ -35,7 +36,7 @@ const homepage = await getHomepageSettings(db);
         <dt>連絡先</dt>
         <dd><a href={`mailto:${homepage.email}`}>{homepage.email}</a></dd>
       </div>
-    </div>
+    </dl>
   </section>
 
   <section class="page-section">
@@ -77,17 +78,17 @@ const homepage = await getHomepageSettings(db);
     </div>
   </section>
 
-  <section class="page-section cta-panel">
+  <section class="page-section homepage-contact">
     <SectionHeading
       eyebrow="Contact"
       title="相談や依頼について"
       intro={homepage.contactIntro}
     />
-    <div class="button-row">
-      <a class="button" href="/contact/">問い合わせフォームへ</a>
-      <a class="button button--secondary" href={siteMeta.social[0].href}>
-        GitHub
-      </a>
+    <div class="cta-panel homepage-contact__panel">
+      <div class="button-row">
+        <DadsButton href="/contact/" label="問い合わせフォームへ" />
+        <DadsButton href={siteMeta.social[0].href} tone="outline" label="GitHub" />
+      </div>
     </div>
   </section>
 </BaseLayout>

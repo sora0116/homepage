@@ -17,11 +17,24 @@ if (!work) {
       description={work.summary}
       date={work.publishedAt}
       tags={work.tags}
+      breadcrumbs={[
+        { href: "/", label: "ホーム" },
+        { href: "/works/", label: "作品" },
+        { label: work.title }
+      ]}
     >
       <Fragment set:html={renderMarkdown(work.body)} />
     </MarkdownPageLayout>
   ) : (
-    <MarkdownPageLayout title="作品が見つかりません" description="Not Found">
+    <MarkdownPageLayout
+      title="作品が見つかりません"
+      description="Not Found"
+      breadcrumbs={[
+        { href: "/", label: "ホーム" },
+        { href: "/works/", label: "作品" },
+        { label: "Not Found" }
+      ]}
+    >
       <p>指定された作品は存在しないか、まだ公開されていません。</p>
     </MarkdownPageLayout>
   )

@@ -1,5 +1,7 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import DadsButton from "../../components/DadsButton.astro";
+import NoticeBanner from "../../components/NoticeBanner.astro";
 import SectionHeading from "../../components/SectionHeading.astro";
 import { getAdminPageData } from "../../lib/admin-page";
 
@@ -15,67 +17,65 @@ const { session, db, status, error, homepage } = await getAdminPageData(Astro);
     />
 
     {!db && (
-      <p class="notice notice--error" role="alert">
-        D1 binding `DB` が見つかりません。Cloudflare Worker の Variables and Bindings に D1 を追加してください。
-      </p>
+      <NoticeBanner tone="error" text="D1 binding `DB` が見つかりません。Cloudflare Worker の Variables and Bindings に D1 を追加してください。" />
     )}
 
-    {status && <p class="notice notice--success" role="status">更新を反映しました。</p>}
-    {error && <p class="notice notice--error" role="alert">{error === "invalid" ? "入力内容を確認してください。" : "ログインが必要です。"}</p>}
+    {status && <NoticeBanner tone="success" text="更新を反映しました。" />}
+    {error && <NoticeBanner tone="error" text={error === "invalid" ? "入力内容を確認してください。" : "ログインが必要です。"} />}
 
     {!session ? (
       <div class="admin-shell stack">
         <p>先に管理画面へログインしてください。</p>
         <div class="button-row">
-          <a class="button" href="/admin">/admin へ戻る</a>
+          <DadsButton href="/admin" label="/admin へ戻る" />
         </div>
       </div>
     ) : (
       <div class="admin-shell stack">
         <div class="button-row">
-          <a class="button button--secondary" href="/admin">管理トップへ戻る</a>
+          <DadsButton href="/admin" tone="outline" label="管理トップへ戻る" />
         </div>
 
         {
           homepage && (
             <form class="admin-form stack" method="post" action="/api/admin/site-settings">
-              <div class="field">
-                <label for="heroEyebrow">ヒーロー上部ラベル</label>
-                <input id="heroEyebrow" name="heroEyebrow" value={homepage.heroEyebrow} />
+              <div class="dads-form-control-label app-field" data-size="md">
+                <label class="dads-form-control-label__label" for="heroEyebrow">ヒーロー上部ラベル</label>
+                <span class="dads-input-text"><input class="dads-input-text__input" data-size="md" id="heroEyebrow" name="heroEyebrow" value={homepage.heroEyebrow} /></span>
               </div>
-              <div class="field">
-                <label for="heroTitle">ヒーロータイトル</label>
-                <textarea id="heroTitle" name="heroTitle" rows="3">{homepage.heroTitle}</textarea>
+              <div class="dads-form-control-label app-field" data-size="md">
+                <label class="dads-form-control-label__label" for="heroTitle">ヒーロータイトル</label>
+                <span class="dads-textarea"><textarea class="dads-textarea__textarea" id="heroTitle" name="heroTitle" rows="3">{homepage.heroTitle}</textarea></span>
               </div>
-              <div class="field">
-                <label for="heroIntro">ヒーロー概要</label>
-                <textarea id="heroIntro" name="heroIntro" rows="4">{homepage.heroIntro}</textarea>
+              <div class="dads-form-control-label app-field" data-size="md">
+                <label class="dads-form-control-label__label" for="heroIntro">ヒーロー概要</label>
+                <span class="dads-textarea"><textarea class="dads-textarea__textarea" id="heroIntro" name="heroIntro" rows="4">{homepage.heroIntro}</textarea></span>
               </div>
-              <div class="field">
-                <label for="aboutBody">自己紹介本文</label>
-                <textarea id="aboutBody" name="aboutBody" rows="5">{homepage.aboutBody}</textarea>
+              <div class="dads-form-control-label app-field" data-size="md">
+                <label class="dads-form-control-label__label" for="aboutBody">自己紹介本文</label>
+                <span class="dads-textarea"><textarea class="dads-textarea__textarea" id="aboutBody" name="aboutBody" rows="5">{homepage.aboutBody}</textarea></span>
               </div>
-              <div class="field">
-                <label for="specialties">専門領域</label>
-                <input id="specialties" name="specialties" value={homepage.specialties.join(", ")} />
+              <div class="dads-form-control-label app-field" data-size="md">
+                <label class="dads-form-control-label__label" for="specialties">専門領域</label>
+                <span class="dads-input-text"><input class="dads-input-text__input" data-size="md" id="specialties" name="specialties" value={homepage.specialties.join(", ")} /></span>
               </div>
-              <div class="field">
-                <label for="contactIntro">お問い合わせ導線</label>
-                <textarea id="contactIntro" name="contactIntro" rows="3">{homepage.contactIntro}</textarea>
+              <div class="dads-form-control-label app-field" data-size="md">
+                <label class="dads-form-control-label__label" for="contactIntro">お問い合わせ導線</label>
+                <span class="dads-textarea"><textarea class="dads-textarea__textarea" id="contactIntro" name="contactIntro" rows="3">{homepage.contactIntro}</textarea></span>
               </div>
-              <div class="field">
-                <label for="location">拠点</label>
-                <input id="location" name="location" value={homepage.location} />
+              <div class="dads-form-control-label app-field" data-size="md">
+                <label class="dads-form-control-label__label" for="location">拠点</label>
+                <span class="dads-input-text"><input class="dads-input-text__input" data-size="md" id="location" name="location" value={homepage.location} /></span>
               </div>
-              <div class="field">
-                <label for="interests">関心領域</label>
-                <input id="interests" name="interests" value={homepage.interests} />
+              <div class="dads-form-control-label app-field" data-size="md">
+                <label class="dads-form-control-label__label" for="interests">関心領域</label>
+                <span class="dads-input-text"><input class="dads-input-text__input" data-size="md" id="interests" name="interests" value={homepage.interests} /></span>
               </div>
-              <div class="field">
-                <label for="email">メールアドレス</label>
-                <input id="email" name="email" type="email" value={homepage.email} />
+              <div class="dads-form-control-label app-field" data-size="md">
+                <label class="dads-form-control-label__label" for="email">メールアドレス</label>
+                <span class="dads-input-text"><input class="dads-input-text__input" data-size="md" id="email" name="email" type="email" value={homepage.email} /></span>
               </div>
-              <button class="button" type="submit">トップページ設定を保存</button>
+              <DadsButton type="submit" label="トップページ設定を保存" />
             </form>
           )
         }

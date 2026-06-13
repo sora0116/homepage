@@ -33,9 +33,11 @@ insert or replace into posts (
 
 設計レビュー用の要点は、本文の一部をそのまま Marp スライドとして見せられます。
 
+::dads{component="notification-banner" type="info" heading="DADS Notification Banner" body="本文から実コンポーネントをそのまま呼び出せます。" title="Notification Banner"}
+
 ::marp
 ---
-theme: gaia
+theme: dads
 paginate: true
 ---
 
@@ -96,9 +98,13 @@ insert or replace into works (
 
 デモでは、作品本文の中にそのままスライド要約を差し込めます。
 
+::dads{component="button" label="問い合わせる" href="/contact/" type="solid-fill" title="Primary Button"}
+
+::dads{component="chip-label" label="DADS" style="filled-outline" color="blue" title="Chip Label"}
+
 ::marp
 ---
-theme: default
+theme: dads
 paginate: true
 ---
 

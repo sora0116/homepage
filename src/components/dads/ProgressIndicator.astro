@@ -1,0 +1,18 @@
+---
+import DadsExampleFrame from "./DadsExampleFrame.astro";
+
+interface Props {
+  example?: string;
+  height?: string;
+  title?: string;
+}
+
+const { example = "interactive-demo", height, title } = Astro.props;
+---
+
+<DadsExampleFrame
+  component="progress-indicator"
+  example={example}
+  height={height}
+  title={title}
+/>

@@ -1,0 +1,55 @@
+---
+type ButtonTone = "solid-fill" | "outline" | "text";
+
+interface Props {
+  href?: string;
+  label?: string;
+  tone?: ButtonTone;
+  type?: "button" | "submit" | "reset";
+  name?: string;
+  value?: string;
+  target?: string;
+  rel?: string;
+  ariaLabel?: string;
+}
+
+const {
+  href,
+  label,
+  tone = "solid-fill",
+  type = "button",
+  name,
+  value,
+  target,
+  rel,
+  ariaLabel
+} = Astro.props;
+---
+
+{
+  href ? (
+    <a
+      class="dads-button"
+      data-size="md"
+      data-type={tone}
+      href={href}
+      target={target}
+      rel={rel}
+      aria-label={ariaLabel}
+    >
+      <slot>{label}</slot>
+    </a>
+  ) : (
+    <button
+      class="dads-button"
+      data-size="md"
+      data-type={tone}
+      type={type}
+      name={name}
+      value={value}
+      aria-label={ariaLabel}
+    >
+      <slot>{label}</slot>
+    </button>
+  )
+}

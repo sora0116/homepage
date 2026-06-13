@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "./BaseLayout.astro";
+import Breadcrumbs from "../components/Breadcrumbs.astro";
 import { formatDate } from "../lib/db";
 
 interface Props {
@@ -7,16 +8,18 @@ interface Props {
   description?: string;
   date?: Date | string;
   tags?: string[];
+  breadcrumbs?: { href?: string; label: string }[];
 }
 
-const { title, description, date, tags = [] } = Astro.props;
+const { title, description, date, tags = [], breadcrumbs = [] } = Astro.props;
 ---
 
 <BaseLayout title={title} description={description}>
   <article class="detail stack">
     <header class="detail-header stack">
+      {breadcrumbs.length > 0 && <Breadcrumbs items={breadcrumbs} />}
       {date && <p class="meta">{formatDate(date)}</p>}
-      <h1>{title}</h1>
+      <h1 class="dads-heading" data-size="45">{title}</h1>
       {description && <p class="lead">{description}</p>}
       {tags.length > 0 && (
         <ul class="tag-list" aria-label="タグ">
