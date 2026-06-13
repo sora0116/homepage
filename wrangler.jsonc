@@ -5,5 +5,15 @@
   "assets": {
     "directory": "./dist"
   },
-  "compatibility_date": "2026-06-13"
+  "compatibility_date": "2026-06-13",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    {
+      "pattern": "sora0116.info",
+      "zone_name": "sora0116.info",
+      "custom_domain": true
+    }
+  ]
 }
