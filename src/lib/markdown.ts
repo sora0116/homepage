@@ -49,7 +49,7 @@ function renderMarpDeck(source: string) {
 
 function renderMarpDeckHtml(html: string, css: string) {
   return [
-    '<section class="marp-deck" data-marp-deck data-view="list" data-active-slide="0">',
+    '<section class="marp-deck" data-marp-deck data-view="list" data-active-slide="0" tabindex="0">',
     '  <div class="marp-deck__toolbar">',
     '    <div class="marp-deck__modes" role="group" aria-label="表示モード">',
     '      <button type="button" class="marp-deck__button is-active" data-marp-action="list">一覧</button>',

@@ -26,43 +26,51 @@ export function initMarpDecks(root: ParentNode = document) {
       const target = event.target;
       if (!(target instanceof HTMLElement)) return;
       const button = target.closest("[data-marp-action]");
-      if (!(button instanceof HTMLButtonElement)) return;
-
-      const action = button.dataset.marpAction;
-      const currentView = deck.dataset.view === "presentation" ? "presentation" : "list";
-      const currentIndex = normalizeSlideIndex(deck.dataset.activeSlide, elements.slides.length);
-
-      if (action === "list" || action === "presentation") {
-        updateDeck(deck, elements, action, currentIndex);
+      if (button instanceof HTMLButtonElement) {
+        deck.focus();
+        const action = button.dataset.marpAction;
+        await runDeckAction(deck, elements, action);
         return;
       }
 
-      if (action === "prev") {
-        updateDeck(deck, elements, currentView, currentIndex - 1);
-        return;
-      }
+      if (deck.dataset.fullscreen !== "true" || deck.dataset.view !== "list") return;
 
-      if (action === "next") {
-        updateDeck(deck, elements, currentView, currentIndex + 1);
-        return;
-      }
+      const slideIndex = getSlideIndexFromEvent(event, elements.slides);
+      if (slideIndex < 0) return;
 
-      if (action === "fullscreen") {
-        if (document.fullscreenElement === deck) {
-          await document.exitFullscreen();
-        } else {
-          updateDeck(deck, elements, "presentation", currentIndex);
-          await deck.requestFullscreen();
-        }
-      }
+      deck.focus();
+      updateDeck(deck, elements, "presentation", slideIndex);
     });
 
     document.addEventListener("fullscreenchange", () => {
       const isFullscreen = document.fullscreenElement === deck;
       deck.dataset.fullscreen = isFullscreen ? "true" : "false";
+      deck.dataset.toolbarVisible = isFullscreen ? "false" : "true";
       if (elements.fullscreenButton) {
         elements.fullscreenButton.textContent = isFullscreen ? "全画面終了" : "全画面";
       }
+    });
+
+    deck.addEventListener("pointermove", (event) => {
+      if (deck.dataset.fullscreen !== "true") return;
+      deck.dataset.toolbarVisible = event.clientY <= 96 ? "true" : "false";
+    });
+
+    deck.addEventListener("pointerleave", () => {
+      if (deck.dataset.fullscreen !== "true") return;
+      deck.dataset.toolbarVisible = "false";
+    });
+
+    deck.addEventListener("focusin", () => {
+      if (deck.dataset.fullscreen !== "true") return;
+      deck.dataset.toolbarVisible = "true";
+    });
+
+    deck.addEventListener("keydown", async (event) => {
+      const action = getDeckActionFromKey(event.key, deck.dataset.view === "presentation");
+      if (!action) return;
+      event.preventDefault();
+      await runDeckAction(deck, elements, action);
     });
   }
 }
@@ -90,7 +98,9 @@ function updateDeck(
   deck.dataset.activeSlide = String(activeSlide);
 
   for (const [index, slide] of elements.slides.entries()) {
-    slide.toggleAttribute("hidden", view === "presentation" && index !== activeSlide);
+    const isVisible = view === "list" || index === activeSlide;
+    slide.classList.toggle("is-hidden", !isVisible);
+    slide.setAttribute("aria-hidden", isVisible ? "false" : "true");
   }
 
   elements.listButton?.classList.toggle("is-active", view === "list");
@@ -111,6 +121,88 @@ function updateDeck(
         ? `${activeSlide + 1} / ${elements.slides.length}`
         : `全 ${elements.slides.length} 枚`;
   }
+}
+
+async function runDeckAction(
+  deck: HTMLElement,
+  elements: MarpDeckElements,
+  action: string | undefined
+) {
+  const currentView = deck.dataset.view === "presentation" ? "presentation" : "list";
+  const currentIndex = normalizeSlideIndex(deck.dataset.activeSlide, elements.slides.length);
+
+  if (action === "list" || action === "presentation") {
+    updateDeck(deck, elements, action, currentIndex);
+    return;
+  }
+
+  if (action === "prev") {
+    updateDeck(deck, elements, currentView, currentIndex - 1);
+    return;
+  }
+
+  if (action === "next") {
+    updateDeck(deck, elements, currentView, currentIndex + 1);
+    return;
+  }
+
+  if (action === "first") {
+    updateDeck(deck, elements, "presentation", 0);
+    return;
+  }
+
+  if (action === "last") {
+    updateDeck(deck, elements, "presentation", elements.slides.length - 1);
+    return;
+  }
+
+  if (action === "fullscreen") {
+    if (document.fullscreenElement === deck) {
+      await document.exitFullscreen();
+    } else {
+      updateDeck(deck, elements, "presentation", currentIndex);
+      await deck.requestFullscreen();
+    }
+  }
+}
+
+function getDeckActionFromKey(key: string, isPresentation: boolean) {
+  switch (key) {
+    case "ArrowLeft":
+    case "PageUp":
+      return "prev";
+    case "ArrowRight":
+    case "PageDown":
+    case " ":
+      return "next";
+    case "Home":
+      return "first";
+    case "End":
+      return "last";
+    case "p":
+    case "P":
+      return isPresentation ? "list" : "presentation";
+    case "l":
+    case "L":
+      return "list";
+    case "f":
+    case "F":
+      return "fullscreen";
+    case "Escape":
+      return document.fullscreenElement ? "fullscreen" : undefined;
+    default:
+      return undefined;
+  }
+}
+
+function getSlideIndexFromEvent(event: MouseEvent, slides: SVGElement[]) {
+  for (const node of event.composedPath()) {
+    if (!(node instanceof SVGElement)) continue;
+    const index = slides.indexOf(node);
+    if (index >= 0) return index;
+  }
+
+  return -1;
 }
 
 function normalizeSlideIndex(value: string | number | undefined, slideCount: number) {
