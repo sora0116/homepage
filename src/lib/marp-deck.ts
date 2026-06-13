@@ -1,5 +1,9 @@
 type MarpDeckView = "list" | "presentation";
 const touchLayoutMedia = window.matchMedia("(max-width: 48rem), (hover: none) and (pointer: coarse)");
+const fullscreenEnterIcon =
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10V4h6v1.5H5.5V10H4Zm14.5 0V5.5H14V4h6v6h-1.5ZM14 20v-1.5h4.5V14H20v6h-6ZM4 20v-6h1.5v4.5H10V20H4Z" fill="currentColor"></path></svg>';
+const fullscreenExitIcon =
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 10H4V8.5h4.5V4H10v6Zm4 0V4h1.5v4.5H20V10h-6Zm-4 4v6H8.5v-4.5H4V14h6Zm10 0v1.5h-4.5V20H14v-6h6Z" fill="currentColor"></path></svg>';
 
 interface MarpDeckElements {
   fullscreenButton: HTMLButtonElement | null;
@@ -47,9 +51,7 @@ export function initMarpDecks(root: ParentNode = document) {
       const isFullscreen = document.fullscreenElement === deck;
       deck.dataset.fullscreen = isFullscreen ? "true" : "false";
       deck.dataset.toolbarVisible = isFullscreen && !usesTouchLayout() ? "false" : "true";
-      if (elements.fullscreenButton) {
-        elements.fullscreenButton.textContent = isFullscreen ? "全画面終了" : "全画面";
-      }
+      syncFullscreenButton(elements.fullscreenButton, isFullscreen);
     });
 
     deck.addEventListener("pointermove", (event) => {
@@ -170,6 +172,12 @@ function syncModeButton(button: HTMLButtonElement | null, active: boolean) {
   if (!button) return;
   button.dataset.active = active ? "true" : "false";
   button.dataset.type = active ? "solid-fill" : "outline";
+}
+
+function syncFullscreenButton(button: HTMLButtonElement | null, isFullscreen: boolean) {
+  if (!button) return;
+  button.setAttribute("aria-label", isFullscreen ? "全画面終了" : "全画面");
+  button.innerHTML = isFullscreen ? fullscreenExitIcon : fullscreenEnterIcon;
 }
 
 async function runDeckAction(
