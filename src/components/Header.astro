@@ -9,23 +9,48 @@ const currentPath = normalizePath(Astro.url.pathname);
 <header class="site-header">
   <div class="container site-header__inner">
     <a class="site-title" href="/">{siteMeta.author}</a>
-    <nav aria-label="主要メニュー">
-      <ul class="nav-list">
-        {
-          siteMeta.nav.map((item) => (
-            <li>
-              <a
-                href={item.href}
-                aria-current={
-                  currentPath === normalizePath(item.href) ? "page" : undefined
-                }
-              >
-                {item.label}
-              </a>
-            </li>
-          ))
-        }
-      </ul>
-    </nav>
+    <details class="site-nav" data-site-nav>
+      <summary class="site-nav__toggle" aria-label="メニュー">
+        <span class="site-nav__toggle-icon" aria-hidden="true">
+          <span class="site-nav__toggle-bar"></span>
+          <span class="site-nav__toggle-bar"></span>
+          <span class="site-nav__toggle-bar"></span>
+        </span>
+        <span class="site-nav__toggle-label site-nav__toggle-label--closed">メニュー</span>
+        <span class="site-nav__toggle-label site-nav__toggle-label--open">閉じる</span>
+      </summary>
+      <nav class="site-nav__panel" aria-label="主要メニュー">
+        <ul class="nav-list">
+          {
+            siteMeta.nav.map((item) => (
+              <li>
+                <a
+                  href={item.href}
+                  aria-current={
+                    currentPath === normalizePath(item.href) ? "page" : undefined
+                  }
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+    </details>
   </div>
 </header>
+
+<script>
+  const mobileMedia = window.matchMedia("(max-width: 48rem)");
+
+  const syncSiteNav = () => {
+    for (const rawNav of document.querySelectorAll("[data-site-nav]")) {
+      const nav = rawNav as HTMLDetailsElement;
+      nav.open = !mobileMedia.matches;
+    }
+  };
+
+  syncSiteNav();
+  mobileMedia.addEventListener("change", syncSiteNav);
+</script>

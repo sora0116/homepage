@@ -1,4 +1,5 @@
 type MarpDeckView = "list" | "presentation";
+const touchLayoutMedia = window.matchMedia("(max-width: 48rem), (hover: none) and (pointer: coarse)");
 
 interface MarpDeckElements {
   fullscreenButton: HTMLButtonElement | null;
@@ -45,19 +46,19 @@ export function initMarpDecks(root: ParentNode = document) {
     document.addEventListener("fullscreenchange", () => {
       const isFullscreen = document.fullscreenElement === deck;
       deck.dataset.fullscreen = isFullscreen ? "true" : "false";
-      deck.dataset.toolbarVisible = isFullscreen ? "false" : "true";
+      deck.dataset.toolbarVisible = isFullscreen && !usesTouchLayout() ? "false" : "true";
       if (elements.fullscreenButton) {
         elements.fullscreenButton.textContent = isFullscreen ? "全画面終了" : "全画面";
       }
     });
 
     deck.addEventListener("pointermove", (event) => {
-      if (deck.dataset.fullscreen !== "true") return;
+      if (deck.dataset.fullscreen !== "true" || usesTouchLayout()) return;
       deck.dataset.toolbarVisible = event.clientY <= 96 ? "true" : "false";
     });
 
     deck.addEventListener("pointerleave", () => {
-      if (deck.dataset.fullscreen !== "true") return;
+      if (deck.dataset.fullscreen !== "true" || usesTouchLayout()) return;
       deck.dataset.toolbarVisible = "false";
     });
 
@@ -66,11 +67,51 @@ export function initMarpDecks(root: ParentNode = document) {
       deck.dataset.toolbarVisible = "true";
     });
 
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchActive = false;
+
+    deck.addEventListener(
+      "touchstart",
+      (event) => {
+        if (deck.dataset.view !== "presentation") return;
+        const touch = event.touches[0];
+        if (!touch) return;
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+        touchActive = true;
+      },
+      { passive: true }
+    );
+
+    deck.addEventListener(
+      "touchend",
+      async (event) => {
+        if (!touchActive || deck.dataset.view !== "presentation") return;
+        touchActive = false;
+        const touch = event.changedTouches[0];
+        if (!touch) return;
+
+        const deltaX = touch.clientX - touchStartX;
+        const deltaY = touch.clientY - touchStartY;
+        if (Math.abs(deltaX) < 48 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
+
+        await runDeckAction(deck, elements, deltaX < 0 ? "next" : "prev");
+      },
+      { passive: true }
+    );
+
     deck.addEventListener("keydown", async (event) => {
       const action = getDeckActionFromKey(event.key, deck.dataset.view === "presentation");
       if (!action) return;
       event.preventDefault();
       await runDeckAction(deck, elements, action);
+    });
+
+    touchLayoutMedia.addEventListener("change", () => {
+      if (deck.dataset.fullscreen === "true") {
+        deck.dataset.toolbarVisible = usesTouchLayout() ? "true" : "false";
+      }
     });
   }
 }
@@ -209,4 +250,8 @@ function normalizeSlideIndex(value: string | number | undefined, slideCount: num
   const parsed = typeof value === "number" ? value : Number(value ?? 0);
   if (!Number.isFinite(parsed)) return 0;
   return Math.max(0, Math.min(slideCount - 1, parsed));
+}
+
+function usesTouchLayout() {
+  return touchLayoutMedia.matches;
 }
