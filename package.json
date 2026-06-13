@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.6.0",
+    "@marp-team/marp-core": "^4.3.0",
     "astro": "^5.9.0",
     "marked": "^15.0.12",
     "zod": "^4.1.0"

@@ -68,13 +68,28 @@ export const defaultPosts: PostRecord[] = [
 
 今回のサイトでは、色、余白、フォーム、フォーカス表現を優先して合わせています。
 
-設計レビュー用の資料は、本文中にそのまま埋め込んで確認できます。
+設計レビュー用の要点は、本文の一部をそのまま Marp スライドとして見せられます。
 
-::slide{src="https://docs.google.com/presentation/d/1Gk4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b/edit#slide=id.p1" title="Google Slides のサンプル" aspect="16:9"}
+::marp
+---
+theme: gaia
+paginate: true
+---
 
-配布用の PDF も同じ書式で並べられます。
+# DADS を個人サイトに移すときの要点
 
-::slide{src="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" title="PDF のサンプル" aspect="16:9"}`,
+- 可読性を最優先にする
+- 余白とフォームを先に揃える
+- 更新導線まで設計に含める
+
+---
+
+## このサイトで優先した項目
+
+1. 色のコントラスト
+2. フォーカスの見え方
+3. 管理画面からの更新しやすさ
+::`,
     status: "published",
     publishedAt: "2026-06-11T00:00:00.000Z",
     updatedAt: now,
@@ -106,13 +121,33 @@ export const defaultWorks: WorkRecord[] = [
 
 静的生成を基本としつつ、フォーム送信だけをサーバーサイドで処理する構成にしています。
 
-デモでは、外部公開したスライド URL をそのまま作品本文に差し込めます。
+デモでは、作品本文の中にそのままスライド要約を差し込めます。
 
-::slide{src="https://sli.dev/" title="Slidev 公開 URL のサンプル" aspect="16:9"}
+::marp
+---
+theme: default
+paginate: true
+---
 
-Marp で出力した HTML を置いている場合も同じです。
+# 個人ホームページ基盤
 
-::slide{src="https://marp.app/" title="Marp 公開 HTML のサンプル" aspect="16:9"}`,
+Astro + Cloudflare で構築
+
+---
+
+## 含めた機能
+
+- ブログ
+- 作品一覧
+- 問い合わせフォーム
+- 管理画面プレビュー
+
+---
+
+## 運用の方針
+
+更新は D1 を正として管理し、公開ページと管理画面で同じ本文レンダラを使う。
+::`,
     status: "published",
     publishedAt: "2026-06-12T00:00:00.000Z",
     updatedAt: now,

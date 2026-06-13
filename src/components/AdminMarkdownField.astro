@@ -28,7 +28,7 @@ const { id, name, label, rows = 10, value = "" } = Astro.props;
 </div>
 
 <script>
-  import { renderMarkdown } from "../lib/markdown";
+  const markdownRendererPromise = import("../lib/markdown");
 
   for (const rawEditor of document.querySelectorAll("[data-markdown-editor]")) {
     const editor = rawEditor as HTMLElement;
@@ -38,11 +38,12 @@ const { id, name, label, rows = 10, value = "" } = Astro.props;
     const preview = editor.querySelector("[data-markdown-preview]");
     if (!(input instanceof HTMLTextAreaElement) || !(preview instanceof HTMLElement)) continue;
 
-    const render = () => {
+    const render = async () => {
+      const { renderMarkdown } = await markdownRendererPromise;
       preview.innerHTML = renderMarkdown(input.value || "");
     };
 
     input.addEventListener("input", render);
-    render();
+    void render();
   }
 </script>
