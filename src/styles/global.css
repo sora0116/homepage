@@ -399,6 +399,17 @@ textarea {
   padding: var(--space-5);
 }
 
+.admin-filter {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 2fr) minmax(12rem, 1fr) auto;
+  align-items: end;
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
 .admin-inquiry-header {
   display: flex;
   align-items: flex-start;
@@ -436,5 +447,9 @@ textarea {
 
   .admin-inquiry-header {
     flex-direction: column;
+  }
+
+  .admin-filter {
+    grid-template-columns: 1fr;
   }
 }

@@ -10,8 +10,23 @@ export async function getAdminPageData(Astro: AstroContextLike) {
   const locals = Astro.locals as { runtime?: { env?: Record<string, unknown> } };
   const session = await getAdminSession(locals, Astro.request);
   const db = getDb(locals);
-  const status = new URL(Astro.request.url).searchParams.get("status");
-  const error = new URL(Astro.request.url).searchParams.get("error");
+  const currentUrl = new URL(Astro.request.url);
+  const status = currentUrl.searchParams.get("status");
+  const error = currentUrl.searchParams.get("error");
+  const inquiryQuery = currentUrl.searchParams.get("q")?.trim() || "";
+  const inquiryStatusFilter = currentUrl.searchParams.get("status_filter")?.trim() || "";
+  const inquiries = session ? await listInquiries(db) : [];
+  const filteredInquiries = inquiries.filter((inquiry) => {
+    const matchesQuery =
+      !inquiryQuery ||
+      [inquiry.name, inquiry.email, inquiry.message]
+        .join("\n")
+        .toLowerCase()
+        .includes(inquiryQuery.toLowerCase());
+    const matchesStatus =
+      !inquiryStatusFilter || inquiry.status === inquiryStatusFilter;
+    return matchesQuery && matchesStatus;
+  });
 
   return {
     session,
@@ -21,7 +36,10 @@ export async function getAdminPageData(Astro: AstroContextLike) {
     posts: session ? await listPosts(db, true) : [],
     works: session ? await listWorks(db, true) : [],
     homepage: session ? await getHomepageSettings(db) : null,
-    inquiries: session ? await listInquiries(db) : []
+    inquiries,
+    filteredInquiries,
+    inquiryQuery,
+    inquiryStatusFilter
   };
 }
 

@@ -4,7 +4,16 @@ import SectionHeading from "../../components/SectionHeading.astro";
 import { getAdminPageData } from "../../lib/admin-page";
 import { formatDateTime } from "../../lib/db";
 
-const { session, db, status, error, inquiries } = await getAdminPageData(Astro);
+const {
+  session,
+  db,
+  status,
+  error,
+  inquiries,
+  filteredInquiries,
+  inquiryQuery,
+  inquiryStatusFilter
+} = await getAdminPageData(Astro);
 ---
 
 <BaseLayout title="Admin Inquiries" description="Inquiry management">
@@ -37,13 +46,47 @@ const { session, db, status, error, inquiries } = await getAdminPageData(Astro);
           <a class="button button--secondary" href="/admin">管理トップへ戻る</a>
         </div>
 
-        {inquiries.length === 0 ? (
+        <form class="admin-filter" method="get" action="/admin/inquiries">
+          <div class="field">
+            <label for="q">検索</label>
+            <input
+              id="q"
+              name="q"
+              value={inquiryQuery}
+              placeholder="名前、メール、本文で検索"
+            />
+          </div>
+          <div class="field">
+            <label for="status_filter">状態</label>
+            <select id="status_filter" name="status_filter">
+              <option value="">すべて</option>
+              <option value="new" selected={inquiryStatusFilter === "new"}>new</option>
+              <option value="in_progress" selected={inquiryStatusFilter === "in_progress"}>in_progress</option>
+              <option value="replied" selected={inquiryStatusFilter === "replied"}>replied</option>
+              <option value="archived" selected={inquiryStatusFilter === "archived"}>archived</option>
+            </select>
+          </div>
+          <div class="button-row">
+            <button class="button" type="submit">絞り込む</button>
+            <a class="button button--secondary" href="/admin/inquiries">リセット</a>
+          </div>
+        </form>
+
+        <p class="meta">
+          全 {inquiries.length} 件中 {filteredInquiries.length} 件を表示
+        </p>
+
+        {filteredInquiries.length === 0 ? (
           <div class="admin-form stack">
-            <p>まだ問い合わせはありません。</p>
+            <p>
+              {inquiries.length === 0
+                ? "まだ問い合わせはありません。"
+                : "条件に一致する問い合わせはありません。"}
+            </p>
           </div>
         ) : (
           <div class="admin-list">
-            {inquiries.map((inquiry) => (
+            {filteredInquiries.map((inquiry) => (
               <form class="admin-form stack" method="post" action="/api/admin/inquiries">
                 <input type="hidden" name="id" value={inquiry.id} />
                 <div class="admin-inquiry-header">
