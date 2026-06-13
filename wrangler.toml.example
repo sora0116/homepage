@@ -1,0 +1,30 @@
+name = "homepage"
+main = "./dist/_worker.js/index.js"
+compatibility_date = "2026-06-13"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = false
+preview_urls = false
+
+[assets]
+directory = "./dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "homepage-db"
+database_id = "0a69fa05-e711-41f8-ba53-ec23015ba7b8"
+
+[[ratelimits]]
+name = "PUBLIC_API_RATE_LIMITER"
+namespace_id = "REPLACE_WITH_PUBLIC_RATE_LIMIT_NAMESPACE_ID"
+
+[ratelimits.simple]
+limit = 60
+period = 60
+
+[[ratelimits]]
+name = "ADMIN_API_RATE_LIMITER"
+namespace_id = "REPLACE_WITH_ADMIN_RATE_LIMIT_NAMESPACE_ID"
+
+[ratelimits.simple]
+limit = 20
+period = 60

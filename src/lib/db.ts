@@ -108,6 +108,45 @@ export interface InquiryRecord {
   updatedAt: string;
 }
 
+const POST_COLUMNS = `
+  id,
+  slug,
+  title,
+  description,
+  body,
+  status,
+  published_at,
+  updated_at,
+  tags_json
+`;
+
+const WORK_COLUMNS = `
+  id,
+  slug,
+  title,
+  summary,
+  body,
+  status,
+  published_at,
+  updated_at,
+  tags_json,
+  links_json,
+  featured
+`;
+
+const INQUIRY_COLUMNS = `
+  id,
+  name,
+  email,
+  message,
+  status,
+  source,
+  created_at,
+  updated_at
+`;
+
+const DEFAULT_LIST_LIMIT = 20;
+
 export function getDb(locals: RuntimeLocals | undefined) {
   const db = locals?.runtime?.env?.DB;
   return db && typeof db === "object" ? (db as D1DatabaseLike) : null;
@@ -189,14 +228,19 @@ function sortByPublishedAt<T extends { publishedAt: string }>(items: T[]) {
 export async function listPosts(db: D1DatabaseLike | null, includeDrafts = false) {
   if (!db) {
     return sortByPublishedAt(
-      defaultPosts.filter((post) => includeDrafts || post.status === "published")
+      defaultPosts
+        .filter((post) => includeDrafts || post.status === "published")
+        .slice(0, DEFAULT_LIST_LIMIT)
     );
   }
 
   const query = includeDrafts
-    ? `select * from posts order by datetime(published_at) desc`
-    : `select * from posts where status = 'published' order by datetime(published_at) desc`;
-  const result = await db.prepare(query).bind().all<PostRow>();
+    ? `select ${POST_COLUMNS} from posts order by datetime(published_at) desc limit ?`
+    : `select ${POST_COLUMNS} from posts where status = ? order by datetime(published_at) desc limit ?`;
+  const statement = includeDrafts
+    ? db.prepare(query).bind(DEFAULT_LIST_LIMIT)
+    : db.prepare(query).bind("published", DEFAULT_LIST_LIMIT);
+  const result = await statement.all<PostRow>();
   return (result.results || []).map(mapPost);
 }
 
@@ -214,9 +258,11 @@ export async function getPostBySlug(
   }
 
   const query = includeDrafts
-    ? `select * from posts where slug = ? limit 1`
-    : `select * from posts where slug = ? and status = 'published' limit 1`;
-  const result = await db.prepare(query).bind(slug).first<PostRow>();
+    ? `select ${POST_COLUMNS} from posts where slug = ? limit 1`
+    : `select ${POST_COLUMNS} from posts where slug = ? and status = ? limit 1`;
+  const result = includeDrafts
+    ? await db.prepare(query).bind(slug).first<PostRow>()
+    : await db.prepare(query).bind(slug, "published").first<PostRow>();
   return result ? mapPost(result) : null;
 }
 
@@ -229,7 +275,7 @@ export async function getPostById(
   }
 
   const result = await db
-    .prepare(`select * from posts where id = ? limit 1`)
+    .prepare(`select ${POST_COLUMNS} from posts where id = ? limit 1`)
     .bind(id)
     .first<PostRow>();
   return result ? mapPost(result) : null;
@@ -238,14 +284,19 @@ export async function getPostById(
 export async function listWorks(db: D1DatabaseLike | null, includeDrafts = false) {
   if (!db) {
     return sortByPublishedAt(
-      defaultWorks.filter((work) => includeDrafts || work.status === "published")
+      defaultWorks
+        .filter((work) => includeDrafts || work.status === "published")
+        .slice(0, DEFAULT_LIST_LIMIT)
     );
   }
 
   const query = includeDrafts
-    ? `select * from works order by datetime(published_at) desc`
-    : `select * from works where status = 'published' order by datetime(published_at) desc`;
-  const result = await db.prepare(query).bind().all<WorkRow>();
+    ? `select ${WORK_COLUMNS} from works order by datetime(published_at) desc limit ?`
+    : `select ${WORK_COLUMNS} from works where status = ? order by datetime(published_at) desc limit ?`;
+  const statement = includeDrafts
+    ? db.prepare(query).bind(DEFAULT_LIST_LIMIT)
+    : db.prepare(query).bind("published", DEFAULT_LIST_LIMIT);
+  const result = await statement.all<WorkRow>();
   return (result.results || []).map(mapWork);
 }
 
@@ -263,9 +314,11 @@ export async function getWorkBySlug(
   }
 
   const query = includeDrafts
-    ? `select * from works where slug = ? limit 1`
-    : `select * from works where slug = ? and status = 'published' limit 1`;
-  const result = await db.prepare(query).bind(slug).first<WorkRow>();
+    ? `select ${WORK_COLUMNS} from works where slug = ? limit 1`
+    : `select ${WORK_COLUMNS} from works where slug = ? and status = ? limit 1`;
+  const result = includeDrafts
+    ? await db.prepare(query).bind(slug).first<WorkRow>()
+    : await db.prepare(query).bind(slug, "published").first<WorkRow>();
   return result ? mapWork(result) : null;
 }
 
@@ -278,7 +331,7 @@ export async function getWorkById(
   }
 
   const result = await db
-    .prepare(`select * from works where id = ? limit 1`)
+    .prepare(`select ${WORK_COLUMNS} from works where id = ? limit 1`)
     .bind(id)
     .first<WorkRow>();
   return result ? mapWork(result) : null;
@@ -290,8 +343,8 @@ export async function getHomepageSettings(db: D1DatabaseLike | null) {
   }
 
   const row = await db
-    .prepare(`select * from site_settings where key = 'homepage' limit 1`)
-    .bind()
+    .prepare(`select key, value_json from site_settings where key = ? limit 1`)
+    .bind("homepage")
     .first<SiteSettingsRow>();
 
   if (!row) {
@@ -314,8 +367,10 @@ export async function listInquiries(db: D1DatabaseLike | null) {
   }
 
   const result = await db
-    .prepare(`select * from inquiries order by datetime(created_at) desc`)
-    .bind()
+    .prepare(
+      `select ${INQUIRY_COLUMNS} from inquiries order by datetime(created_at) desc limit ?`
+    )
+    .bind(DEFAULT_LIST_LIMIT)
     .all<InquiryRow>();
 
   return (result.results || []).map(mapInquiry);
