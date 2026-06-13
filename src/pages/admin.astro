@@ -3,7 +3,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import SectionHeading from "../components/SectionHeading.astro";
 import { getAdminPageData } from "../lib/admin-page";
 
-const { session, db, status, error, posts, works } = await getAdminPageData(Astro);
+const { session, db, status, error, posts, works, inquiries } = await getAdminPageData(Astro);
 ---
 
 <BaseLayout title="Admin" description="Content management">
@@ -94,6 +94,18 @@ const { session, db, status, error, posts, works } = await getAdminPageData(Astr
             <p>ヒーロー文言、自己紹介、連絡導線などの設定を更新します。</p>
             <div class="button-row">
               <a class="button" href="/admin/homepage">設定を編集</a>
+            </div>
+          </article>
+
+          <article class="admin-card stack">
+            <p class="eyebrow">Inquiries</p>
+            <h2>お問い合わせ管理</h2>
+            <p>受信した問い合わせ内容を確認し、対応状況を切り替えます。</p>
+            <p class="meta">
+              全 {inquiries.length} 件 / 未対応 {inquiries.filter((inquiry) => inquiry.status === "new").length} 件
+            </p>
+            <div class="button-row">
+              <a class="button" href="/admin/inquiries">お問い合わせを見る</a>
             </div>
           </article>
         </div>

@@ -29,3 +29,14 @@ create table if not exists site_settings (
   value_json text not null,
   updated_at text not null
 );
+
+create table if not exists inquiries (
+  id text primary key,
+  name text not null,
+  email text not null,
+  message text not null,
+  status text not null check (status in ('new', 'in_progress', 'replied', 'archived')),
+  source text not null,
+  created_at text not null,
+  updated_at text not null
+);

@@ -60,6 +60,19 @@ type SiteSettingsRow = {
   value_json: string;
 };
 
+type InquiryStatus = "new" | "in_progress" | "replied" | "archived";
+
+type InquiryRow = {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  status: InquiryStatus;
+  source: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export interface PostInput {
   id?: string;
   slug: string;
@@ -82,6 +95,17 @@ export interface WorkInput {
   tags: string[];
   links: WorkLink[];
   featured: boolean;
+}
+
+export interface InquiryRecord {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  status: InquiryStatus;
+  source: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export function getDb(locals: RuntimeLocals | undefined) {
@@ -139,6 +163,19 @@ function mapWork(row: WorkRow): WorkRecord {
         typeof item.href === "string"
     ),
     featured: Boolean(row.featured)
+  };
+}
+
+function mapInquiry(row: InquiryRow): InquiryRecord {
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    message: row.message,
+    status: row.status,
+    source: row.source,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
   };
 }
 
@@ -239,6 +276,69 @@ export async function getHomepageSettings(db: D1DatabaseLike | null) {
   } catch {
     return defaultHomepageSettings;
   }
+}
+
+export async function listInquiries(db: D1DatabaseLike | null) {
+  if (!db) {
+    return [] as InquiryRecord[];
+  }
+
+  const result = await db
+    .prepare(`select * from inquiries order by datetime(created_at) desc`)
+    .bind()
+    .all<InquiryRow>();
+
+  return (result.results || []).map(mapInquiry);
+}
+
+export async function createInquiry(
+  db: D1DatabaseLike | null,
+  input: {
+    name: string;
+    email: string;
+    message: string;
+    source?: string;
+  }
+) {
+  if (!db) {
+    return;
+  }
+
+  const now = new Date().toISOString();
+  await db
+    .prepare(
+      `insert into inquiries (
+        id,
+        name,
+        email,
+        message,
+        status,
+        source,
+        created_at,
+        updated_at
+      ) values (?, ?, ?, ?, 'new', ?, ?, ?)`
+    )
+    .bind(
+      crypto.randomUUID(),
+      input.name,
+      input.email,
+      input.message,
+      input.source || "homepage-contact-form",
+      now,
+      now
+    )
+    .run();
+}
+
+export async function updateInquiryStatus(
+  db: D1DatabaseLike,
+  id: string,
+  status: InquiryStatus
+) {
+  await db
+    .prepare(`update inquiries set status = ?, updated_at = ? where id = ?`)
+    .bind(status, new Date().toISOString(), id)
+    .run();
 }
 
 export async function upsertPost(db: D1DatabaseLike, input: PostInput) {
@@ -355,5 +455,16 @@ export function formatDate(date: Date | string) {
     year: "numeric",
     month: "long",
     day: "numeric"
+  }).format(value);
+}
+
+export function formatDateTime(date: Date | string) {
+  const value = typeof date === "string" ? new Date(date) : date;
+  return new Intl.DateTimeFormat("ja-JP", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
   }).format(value);
 }

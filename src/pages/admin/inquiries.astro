@@ -1,0 +1,81 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import SectionHeading from "../../components/SectionHeading.astro";
+import { getAdminPageData } from "../../lib/admin-page";
+import { formatDateTime } from "../../lib/db";
+
+const { session, db, status, error, inquiries } = await getAdminPageData(Astro);
+---
+
+<BaseLayout title="Admin Inquiries" description="Inquiry management">
+  <section class="page-section">
+    <SectionHeading
+      eyebrow="Admin"
+      title="お問い合わせ管理"
+      intro="受信した問い合わせを確認し、対応状況を更新します。"
+    />
+
+    {!db && (
+      <p class="notice notice--error" role="alert">
+        D1 binding `DB` が見つかりません。Cloudflare Worker の Variables and Bindings に D1 を追加してください。
+      </p>
+    )}
+
+    {status && <p class="notice notice--success" role="status">更新を反映しました。</p>}
+    {error && <p class="notice notice--error" role="alert">{error === "invalid" ? "入力内容を確認してください。" : "ログインが必要です。"}</p>}
+
+    {!session ? (
+      <div class="admin-shell stack">
+        <p>先に管理画面へログインしてください。</p>
+        <div class="button-row">
+          <a class="button" href="/admin">/admin へ戻る</a>
+        </div>
+      </div>
+    ) : (
+      <div class="admin-shell stack">
+        <div class="button-row">
+          <a class="button button--secondary" href="/admin">管理トップへ戻る</a>
+        </div>
+
+        {inquiries.length === 0 ? (
+          <div class="admin-form stack">
+            <p>まだ問い合わせはありません。</p>
+          </div>
+        ) : (
+          <div class="admin-list">
+            {inquiries.map((inquiry) => (
+              <form class="admin-form stack" method="post" action="/api/admin/inquiries">
+                <input type="hidden" name="id" value={inquiry.id} />
+                <div class="admin-inquiry-header">
+                  <div class="stack">
+                    <h3>{inquiry.name}</h3>
+                    <p class="meta">
+                      {formatDateTime(inquiry.createdAt)} / {inquiry.email}
+                    </p>
+                  </div>
+                  <div class="field">
+                    <label>対応状況</label>
+                    <select name="status">
+                      <option value="new" selected={inquiry.status === "new"}>new</option>
+                      <option value="in_progress" selected={inquiry.status === "in_progress"}>in_progress</option>
+                      <option value="replied" selected={inquiry.status === "replied"}>replied</option>
+                      <option value="archived" selected={inquiry.status === "archived"}>archived</option>
+                    </select>
+                  </div>
+                </div>
+                <p class="meta">source: {inquiry.source}</p>
+                <div class="admin-message">
+                  <p>{inquiry.message}</p>
+                </div>
+                <div class="button-row">
+                  <button class="button" type="submit">状態を保存</button>
+                  <a class="button button--secondary" href={`mailto:${inquiry.email}`}>返信する</a>
+                </div>
+              </form>
+            ))}
+          </div>
+        )}
+      </div>
+    )}
+  </section>
+</BaseLayout>

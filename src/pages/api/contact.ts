@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { createInquiry, getDb } from "../../lib/db";
 import { getRuntimeEnv } from "../../lib/runtime-env";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -44,6 +45,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (!emailPattern.test(email)) {
     return redirectToContact("email");
   }
+
+  await createInquiry(getDb(locals), {
+    name,
+    email,
+    message,
+    source: "homepage-contact-form"
+  });
 
   const webhookUrl = getRuntimeEnv(locals, "CONTACT_WEBHOOK_URL");
   if (webhookUrl) {

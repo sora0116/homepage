@@ -1,5 +1,5 @@
 import { getAdminSession } from "./admin-auth";
-import { getDb, getHomepageSettings, listPosts, listWorks } from "./db";
+import { getDb, getHomepageSettings, listInquiries, listPosts, listWorks } from "./db";
 
 type AstroContextLike = {
   locals: unknown;
@@ -20,7 +20,8 @@ export async function getAdminPageData(Astro: AstroContextLike) {
     error,
     posts: session ? await listPosts(db, true) : [],
     works: session ? await listWorks(db, true) : [],
-    homepage: session ? await getHomepageSettings(db) : null
+    homepage: session ? await getHomepageSettings(db) : null,
+    inquiries: session ? await listInquiries(db) : []
   };
 }
 
