@@ -1,6 +1,7 @@
 ---
 import MarkdownPageLayout from "../../layouts/MarkdownPageLayout.astro";
 import { getDb, getWorkBySlug } from "../../lib/db";
+import { renderMarkdown } from "../../lib/markdown";
 
 const slug = Astro.params.slug || "";
 const work = await getWorkBySlug(getDb(Astro.locals), slug);
@@ -17,7 +18,7 @@ if (!work) {
       date={work.publishedAt}
       tags={work.tags}
     >
-      <Fragment set:html={work.body.replace(/\n/g, "<br />")} />
+      <Fragment set:html={renderMarkdown(work.body)} />
     </MarkdownPageLayout>
   ) : (
     <MarkdownPageLayout title="作品が見つかりません" description="Not Found">

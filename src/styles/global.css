@@ -399,6 +399,46 @@ textarea {
   padding: var(--space-5);
 }
 
+.markdown-editor {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.markdown-preview-wrap {
+  min-width: 0;
+}
+
+.markdown-preview {
+  min-height: 18rem;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  overflow-wrap: anywhere;
+}
+
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3 {
+  margin-top: var(--space-4);
+}
+
+.markdown-preview :first-child {
+  margin-top: 0;
+}
+
+.markdown-preview pre {
+  overflow-x: auto;
+  padding: var(--space-4);
+  border-radius: var(--radius);
+  background: #eef2f6;
+}
+
+.markdown-preview code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
 .admin-filter {
   display: grid;
   gap: var(--space-4);
@@ -450,6 +490,10 @@ textarea {
   }
 
   .admin-filter {
+    grid-template-columns: 1fr;
+  }
+
+  .markdown-editor {
     grid-template-columns: 1fr;
   }
 }

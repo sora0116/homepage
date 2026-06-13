@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import SectionHeading from "../../../components/SectionHeading.astro";
+import AdminMarkdownField from "../../../components/AdminMarkdownField.astro";
 import { getAdminPageData, toDateTimeLocal } from "../../../lib/admin-page";
 
 const { session, db, status, error } = await getAdminPageData(Astro);
@@ -63,10 +64,7 @@ const { session, db, status, error } = await getAdminPageData(Astro);
             <label for="publishedAt">公開日時</label>
             <input id="publishedAt" name="publishedAt" type="datetime-local" value={toDateTimeLocal(new Date().toISOString())} required />
           </div>
-          <div class="field">
-            <label for="body">本文</label>
-            <textarea id="body" name="body" rows="8" required></textarea>
-          </div>
+          <AdminMarkdownField id="body" name="body" label="本文" rows={12} />
           <button class="button" type="submit">作品を作成</button>
         </form>
       </div>

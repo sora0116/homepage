@@ -1,6 +1,7 @@
 ---
 import MarkdownPageLayout from "../../layouts/MarkdownPageLayout.astro";
 import { getDb, getPostBySlug } from "../../lib/db";
+import { renderMarkdown } from "../../lib/markdown";
 
 const slug = Astro.params.slug || "";
 const post = await getPostBySlug(getDb(Astro.locals), slug);
@@ -17,7 +18,7 @@ if (!post) {
       date={post.publishedAt}
       tags={post.tags}
     >
-      <Fragment set:html={post.body.replace(/\n/g, "<br />")} />
+      <Fragment set:html={renderMarkdown(post.body)} />
     </MarkdownPageLayout>
   ) : (
     <MarkdownPageLayout title="記事が見つかりません" description="Not Found">

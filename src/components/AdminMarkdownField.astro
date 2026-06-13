@@ -1,0 +1,53 @@
+---
+interface Props {
+  id: string;
+  name: string;
+  label: string;
+  rows?: number;
+  value?: string;
+}
+
+const { id, name, label, rows = 10, value = "" } = Astro.props;
+---
+
+<div class="field">
+  <label for={id}>{label}</label>
+  <div class="markdown-editor" data-markdown-editor>
+    <textarea
+      id={id}
+      name={name}
+      rows={rows}
+      required
+      data-markdown-input
+    >{value}</textarea>
+    <div class="markdown-preview-wrap">
+      <p class="meta">プレビュー</p>
+      <div class="markdown-preview prose" data-markdown-preview></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { marked } from "marked";
+
+  marked.setOptions({
+    breaks: true,
+    gfm: true
+  });
+
+  for (const rawEditor of document.querySelectorAll("[data-markdown-editor]")) {
+    const editor = rawEditor as HTMLElement;
+    if (editor.dataset.markdownReady === "true") continue;
+    editor.dataset.markdownReady = "true";
+    const input = editor.querySelector("[data-markdown-input]");
+    const preview = editor.querySelector("[data-markdown-preview]");
+    if (!(input instanceof HTMLTextAreaElement) || !(preview instanceof HTMLElement)) continue;
+
+    const render = () => {
+      preview.innerHTML = marked.parse(input.value || "") as string;
+    };
+
+    input.addEventListener("input", render);
+    render();
+  }
+</script>

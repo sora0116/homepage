@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import SectionHeading from "../../../components/SectionHeading.astro";
+import AdminMarkdownField from "../../../components/AdminMarkdownField.astro";
 import { getAdminPageData, toDateTimeLocal, toLinksInput, toTagsInput } from "../../../lib/admin-page";
 import { getWorkById } from "../../../lib/db";
 
@@ -72,10 +73,13 @@ const work = session ? await getWorkById(db, id) : null;
             <label for="publishedAt">公開日時</label>
             <input id="publishedAt" name="publishedAt" type="datetime-local" value={toDateTimeLocal(work.publishedAt)} required />
           </div>
-          <div class="field">
-            <label for="body">本文</label>
-            <textarea id="body" name="body" rows="8" required>{work.body}</textarea>
-          </div>
+          <AdminMarkdownField
+            id="body"
+            name="body"
+            label="本文"
+            rows={12}
+            value={work.body}
+          />
           <div class="button-row">
             <button class="button" type="submit" name="_action" value="update">保存</button>
             <button class="button button--secondary" type="submit" name="_action" value="delete">削除</button>
