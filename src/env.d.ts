@@ -6,6 +6,8 @@ interface ImportMetaEnv {
   readonly GITHUB_OAUTH_CLIENT_ID?: string;
   readonly GITHUB_OAUTH_CLIENT_SECRET?: string;
   readonly GITHUB_OAUTH_SCOPE?: string;
+  readonly ADMIN_SESSION_SECRET?: string;
+  readonly ADMIN_GITHUB_LOGINS?: string;
 }
 
 interface ImportMeta {

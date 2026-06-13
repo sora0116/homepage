@@ -2,9 +2,9 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import WorkCard from "../../components/WorkCard.astro";
 import SectionHeading from "../../components/SectionHeading.astro";
-import { getWorks } from "../../lib/content";
+import { getDb, listWorks } from "../../lib/db";
 
-const works = await getWorks();
+const works = await listWorks(getDb(Astro.locals));
 ---
 
 <BaseLayout title="作品" description="作品一覧">

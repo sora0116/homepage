@@ -1,26 +1,19 @@
 ---
-import { formatDate } from "../lib/content";
+import { formatDate } from "../lib/db";
+import type { PostRecord } from "../lib/default-content";
 
 interface Props {
-  post: {
-    slug: string;
-    data: {
-      title: string;
-      description: string;
-      date: Date;
-      tags: string[];
-    };
-  };
+  post: PostRecord;
 }
 
 const { post } = Astro.props;
 ---
 
 <article class="card">
-  <p class="meta">{formatDate(post.data.date)}</p>
-  <h3><a href={`/blog/${post.slug}/`}>{post.data.title}</a></h3>
-  <p>{post.data.description}</p>
+  <p class="meta">{formatDate(post.publishedAt)}</p>
+  <h3><a href={`/blog/${post.slug}/`}>{post.title}</a></h3>
+  <p>{post.description}</p>
   <ul class="tag-list" aria-label="タグ">
-    {post.data.tags.map((tag) => <li>{tag}</li>)}
+    {post.tags.map((tag) => <li>{tag}</li>)}
   </ul>
 </article>

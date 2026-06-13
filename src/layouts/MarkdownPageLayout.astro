@@ -1,11 +1,11 @@
 ---
 import BaseLayout from "./BaseLayout.astro";
-import { formatDate } from "../lib/content";
+import { formatDate } from "../lib/db";
 
 interface Props {
   title: string;
   description?: string;
-  date?: Date;
+  date?: Date | string;
   tags?: string[];
 }
 

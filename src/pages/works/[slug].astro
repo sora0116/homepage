@@ -1,26 +1,27 @@
 ---
-import { getCollection, render } from "astro:content";
 import MarkdownPageLayout from "../../layouts/MarkdownPageLayout.astro";
+import { getDb, getWorkBySlug } from "../../lib/db";
 
-export const prerender = true;
-
-export async function getStaticPaths() {
-  const works = await getCollection("works");
-  return works.map((work) => ({
-    params: { slug: work.slug },
-    props: { work }
-  }));
+const slug = Astro.params.slug || "";
+const work = await getWorkBySlug(getDb(Astro.locals), slug);
+if (!work) {
+  Astro.response.status = 404;
 }
-
-const { work } = Astro.props;
-const { Content } = await render(work);
 ---
 
-<MarkdownPageLayout
-  title={work.data.title}
-  description={work.data.summary}
-  date={work.data.publishedAt}
-  tags={work.data.tags}
->
-  <Content />
-</MarkdownPageLayout>
+{
+  work ? (
+    <MarkdownPageLayout
+      title={work.title}
+      description={work.summary}
+      date={work.publishedAt}
+      tags={work.tags}
+    >
+      <Fragment set:html={work.body.replace(/\n/g, "<br />")} />
+    </MarkdownPageLayout>
+  ) : (
+    <MarkdownPageLayout title="作品が見つかりません" description="Not Found">
+      <p>指定された作品は存在しないか、まだ公開されていません。</p>
+    </MarkdownPageLayout>
+  )
+}
