@@ -1,33 +1,9 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import SectionHeading from "../components/SectionHeading.astro";
-import { getAdminSession } from "../lib/admin-auth";
-import {
-  getDb,
-  getHomepageSettings,
-  listPosts,
-  listWorks
-} from "../lib/db";
+import { getAdminPageData } from "../lib/admin-page";
 
-function toDateTimeLocal(value: string) {
-  return value.slice(0, 16);
-}
-
-function toTagsInput(tags: string[]) {
-  return tags.join(", ");
-}
-
-function toLinksInput(links: { label: string; href: string }[]) {
-  return links.map((link) => `${link.label}|${link.href}`).join("\n");
-}
-
-const session = await getAdminSession(Astro.locals, Astro.request);
-const db = getDb(Astro.locals);
-const posts = session ? await listPosts(db, true) : [];
-const works = session ? await listWorks(db, true) : [];
-const homepage = session ? await getHomepageSettings(db) : null;
-const status = Astro.url.searchParams.get("status");
-const error = Astro.url.searchParams.get("error");
+const { session, db, status, error, posts, works } = await getAdminPageData(Astro);
 ---
 
 <BaseLayout title="Admin" description="Content management">
@@ -35,7 +11,7 @@ const error = Astro.url.searchParams.get("error");
     <SectionHeading
       eyebrow="Admin"
       title="コンテンツ管理"
-      intro="ブログ、作品、トップページ文言を D1 で管理します。"
+      intro="編集画面への導線と、現在の公開状況をまとめて確認します。"
     />
 
     {!db && (
@@ -87,285 +63,40 @@ const error = Astro.url.searchParams.get("error");
           </div>
         </div>
 
-        <section class="page-section">
-          <SectionHeading
-            eyebrow="Homepage"
-            title="トップページ設定"
-            intro="ヒーロー文言、自己紹介、連絡導線を編集します。"
-          />
-          {
-            homepage && (
-              <form class="admin-form stack" method="post" action="/api/admin/site-settings">
-                <div class="field">
-                  <label for="heroEyebrow">ヒーロー上部ラベル</label>
-                  <input id="heroEyebrow" name="heroEyebrow" value={homepage.heroEyebrow} />
-                </div>
-                <div class="field">
-                  <label for="heroTitle">ヒーロータイトル</label>
-                  <textarea id="heroTitle" name="heroTitle" rows="3">{homepage.heroTitle}</textarea>
-                </div>
-                <div class="field">
-                  <label for="heroIntro">ヒーロー概要</label>
-                  <textarea id="heroIntro" name="heroIntro" rows="4">{homepage.heroIntro}</textarea>
-                </div>
-                <div class="field">
-                  <label for="aboutBody">自己紹介本文</label>
-                  <textarea id="aboutBody" name="aboutBody" rows="5">{homepage.aboutBody}</textarea>
-                </div>
-                <div class="field">
-                  <label for="specialties">専門領域</label>
-                  <input id="specialties" name="specialties" value={homepage.specialties.join(", ")} />
-                </div>
-                <div class="field">
-                  <label for="contactIntro">お問い合わせ導線</label>
-                  <textarea id="contactIntro" name="contactIntro" rows="3">{homepage.contactIntro}</textarea>
-                </div>
-                <div class="field">
-                  <label for="location">拠点</label>
-                  <input id="location" name="location" value={homepage.location} />
-                </div>
-                <div class="field">
-                  <label for="interests">関心領域</label>
-                  <input id="interests" name="interests" value={homepage.interests} />
-                </div>
-                <div class="field">
-                  <label for="email">メールアドレス</label>
-                  <input id="email" name="email" type="email" value={homepage.email} />
-                </div>
-                <button class="button" type="submit">トップページ設定を保存</button>
-              </form>
-            )
-          }
-        </section>
+        <div class="admin-grid">
+          <article class="admin-card stack">
+            <p class="eyebrow">Posts</p>
+            <h2>記事管理</h2>
+            <p>記事の作成、公開切替、更新、削除を行います。</p>
+            <p class="meta">
+              全 {posts.length} 件 / 公開 {posts.filter((post) => post.status === "published").length} 件
+            </p>
+            <div class="button-row">
+              <a class="button" href="/admin/posts">記事を管理</a>
+            </div>
+          </article>
 
-        <section class="page-section">
-          <SectionHeading
-            eyebrow="Posts"
-            title="記事"
-            intro="作成、更新、公開切替、削除ができます。"
-          />
-          <form class="admin-form stack" method="post" action="/api/admin/posts">
-            <input type="hidden" name="_action" value="create" />
-            <h3>新規記事</h3>
-            <div class="field">
-              <label for="post-create-slug">slug</label>
-              <input id="post-create-slug" name="slug" required />
+          <article class="admin-card stack">
+            <p class="eyebrow">Works</p>
+            <h2>作品管理</h2>
+            <p>作品一覧とトップの featured 表示を管理します。</p>
+            <p class="meta">
+              全 {works.length} 件 / featured {works.filter((work) => work.featured).length} 件
+            </p>
+            <div class="button-row">
+              <a class="button" href="/admin/works">作品を管理</a>
             </div>
-            <div class="field">
-              <label for="post-create-title">タイトル</label>
-              <input id="post-create-title" name="title" required />
-            </div>
-            <div class="field">
-              <label for="post-create-description">概要</label>
-              <textarea id="post-create-description" name="description" rows="3" required></textarea>
-            </div>
-            <div class="field">
-              <label for="post-create-tags">タグ</label>
-              <input id="post-create-tags" name="tags" placeholder="Design, Astro" />
-            </div>
-            <div class="field">
-              <label for="post-create-status">状態</label>
-              <select id="post-create-status" name="status">
-                <option value="draft">draft</option>
-                <option value="published">published</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="post-create-publishedAt">公開日時</label>
-              <input
-                id="post-create-publishedAt"
-                name="publishedAt"
-                type="datetime-local"
-                value={toDateTimeLocal(new Date().toISOString())}
-                required
-              />
-            </div>
-            <div class="field">
-              <label for="post-create-body">本文</label>
-              <textarea id="post-create-body" name="body" rows="10" required></textarea>
-            </div>
-            <button class="button" type="submit">記事を作成</button>
-          </form>
+          </article>
 
-          <div class="admin-list">
-            {posts.map((post) => (
-              <form class="admin-form stack" method="post" action="/api/admin/posts">
-                <input type="hidden" name="id" value={post.id} />
-                <h3>{post.title}</h3>
-                <div class="field">
-                  <label>slug</label>
-                  <input name="slug" value={post.slug} required />
-                </div>
-                <div class="field">
-                  <label>タイトル</label>
-                  <input name="title" value={post.title} required />
-                </div>
-                <div class="field">
-                  <label>概要</label>
-                  <textarea name="description" rows="3" required>{post.description}</textarea>
-                </div>
-                <div class="field">
-                  <label>タグ</label>
-                  <input name="tags" value={toTagsInput(post.tags)} />
-                </div>
-                <div class="field">
-                  <label>状態</label>
-                  <select name="status">
-                    <option value="draft" selected={post.status === "draft"}>draft</option>
-                    <option value="published" selected={post.status === "published"}>published</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label>公開日時</label>
-                  <input
-                    name="publishedAt"
-                    type="datetime-local"
-                    value={toDateTimeLocal(post.publishedAt)}
-                    required
-                  />
-                </div>
-                <div class="field">
-                  <label>本文</label>
-                  <textarea name="body" rows="10" required>{post.body}</textarea>
-                </div>
-                <div class="button-row">
-                  <button class="button" type="submit" name="_action" value="update">
-                    保存
-                  </button>
-                  <button class="button button--secondary" type="submit" name="_action" value="delete">
-                    削除
-                  </button>
-                </div>
-              </form>
-            ))}
-          </div>
-        </section>
-
-        <section class="page-section">
-          <SectionHeading
-            eyebrow="Works"
-            title="作品"
-            intro="一覧表示とトップの featured 表示を同じ画面で管理します。"
-          />
-          <form class="admin-form stack" method="post" action="/api/admin/works">
-            <input type="hidden" name="_action" value="create" />
-            <h3>新規作品</h3>
-            <div class="field">
-              <label for="work-create-slug">slug</label>
-              <input id="work-create-slug" name="slug" required />
+          <article class="admin-card stack">
+            <p class="eyebrow">Homepage</p>
+            <h2>トップページ設定</h2>
+            <p>ヒーロー文言、自己紹介、連絡導線などの設定を更新します。</p>
+            <div class="button-row">
+              <a class="button" href="/admin/homepage">設定を編集</a>
             </div>
-            <div class="field">
-              <label for="work-create-title">タイトル</label>
-              <input id="work-create-title" name="title" required />
-            </div>
-            <div class="field">
-              <label for="work-create-summary">概要</label>
-              <textarea id="work-create-summary" name="summary" rows="3" required></textarea>
-            </div>
-            <div class="field">
-              <label for="work-create-tags">タグ</label>
-              <input id="work-create-tags" name="tags" placeholder="Astro, Cloudflare" />
-            </div>
-            <div class="field">
-              <label for="work-create-links">リンク</label>
-              <textarea
-                id="work-create-links"
-                name="links"
-                rows="3"
-                placeholder="GitHub|https://github.com/...\nDemo|https://..."
-              ></textarea>
-            </div>
-            <div class="field">
-              <label for="work-create-status">状態</label>
-              <select id="work-create-status" name="status">
-                <option value="draft">draft</option>
-                <option value="published">published</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="work-create-featured">トップ表示</label>
-              <input id="work-create-featured" name="featured" type="checkbox" value="true" />
-            </div>
-            <div class="field">
-              <label for="work-create-publishedAt">公開日時</label>
-              <input
-                id="work-create-publishedAt"
-                name="publishedAt"
-                type="datetime-local"
-                value={toDateTimeLocal(new Date().toISOString())}
-                required
-              />
-            </div>
-            <div class="field">
-              <label for="work-create-body">本文</label>
-              <textarea id="work-create-body" name="body" rows="8" required></textarea>
-            </div>
-            <button class="button" type="submit">作品を作成</button>
-          </form>
-
-          <div class="admin-list">
-            {works.map((work) => (
-              <form class="admin-form stack" method="post" action="/api/admin/works">
-                <input type="hidden" name="id" value={work.id} />
-                <h3>{work.title}</h3>
-                <div class="field">
-                  <label>slug</label>
-                  <input name="slug" value={work.slug} required />
-                </div>
-                <div class="field">
-                  <label>タイトル</label>
-                  <input name="title" value={work.title} required />
-                </div>
-                <div class="field">
-                  <label>概要</label>
-                  <textarea name="summary" rows="3" required>{work.summary}</textarea>
-                </div>
-                <div class="field">
-                  <label>タグ</label>
-                  <input name="tags" value={toTagsInput(work.tags)} />
-                </div>
-                <div class="field">
-                  <label>リンク</label>
-                  <textarea name="links" rows="3">{toLinksInput(work.links)}</textarea>
-                </div>
-                <div class="field">
-                  <label>状態</label>
-                  <select name="status">
-                    <option value="draft" selected={work.status === "draft"}>draft</option>
-                    <option value="published" selected={work.status === "published"}>published</option>
-                  </select>
-                </div>
-                <div class="field checkbox-field">
-                  <label>
-                    <input name="featured" type="checkbox" value="true" checked={work.featured} />
-                    トップに表示
-                  </label>
-                </div>
-                <div class="field">
-                  <label>公開日時</label>
-                  <input
-                    name="publishedAt"
-                    type="datetime-local"
-                    value={toDateTimeLocal(work.publishedAt)}
-                    required
-                  />
-                </div>
-                <div class="field">
-                  <label>本文</label>
-                  <textarea name="body" rows="8" required>{work.body}</textarea>
-                </div>
-                <div class="button-row">
-                  <button class="button" type="submit" name="_action" value="update">
-                    保存
-                  </button>
-                  <button class="button button--secondary" type="submit" name="_action" value="delete">
-                    削除
-                  </button>
-                </div>
-              </form>
-            ))}
-          </div>
-        </section>
+          </article>
+        </div>
       </div>
     )}
   </section>

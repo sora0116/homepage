@@ -1,0 +1,122 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import SectionHeading from "../../components/SectionHeading.astro";
+import { getAdminPageData, toDateTimeLocal, toTagsInput } from "../../lib/admin-page";
+
+const { session, db, status, error, posts } = await getAdminPageData(Astro);
+---
+
+<BaseLayout title="Admin Posts" description="Post management">
+  <section class="page-section">
+    <SectionHeading
+      eyebrow="Admin"
+      title="記事管理"
+      intro="記事の作成、更新、公開切替、削除を行います。"
+    />
+
+    {!db && (
+      <p class="notice notice--error" role="alert">
+        D1 binding `DB` が見つかりません。Cloudflare Worker の Variables and Bindings に D1 を追加してください。
+      </p>
+    )}
+
+    {status && <p class="notice notice--success" role="status">更新を反映しました。</p>}
+    {error && <p class="notice notice--error" role="alert">{error === "post_slug" ? "記事 slug が重複しています。" : error === "invalid" ? "入力内容を確認してください。" : "ログインが必要です。"}</p>}
+
+    {!session ? (
+      <div class="admin-shell stack">
+        <p>先に管理画面へログインしてください。</p>
+        <div class="button-row">
+          <a class="button" href="/admin">/admin へ戻る</a>
+        </div>
+      </div>
+    ) : (
+      <div class="admin-shell stack">
+        <div class="button-row">
+          <a class="button button--secondary" href="/admin">管理トップへ戻る</a>
+        </div>
+
+        <form class="admin-form stack" method="post" action="/api/admin/posts">
+          <input type="hidden" name="_action" value="create" />
+          <h3>新規記事</h3>
+          <div class="field">
+            <label for="post-create-slug">slug</label>
+            <input id="post-create-slug" name="slug" required />
+          </div>
+          <div class="field">
+            <label for="post-create-title">タイトル</label>
+            <input id="post-create-title" name="title" required />
+          </div>
+          <div class="field">
+            <label for="post-create-description">概要</label>
+            <textarea id="post-create-description" name="description" rows="3" required></textarea>
+          </div>
+          <div class="field">
+            <label for="post-create-tags">タグ</label>
+            <input id="post-create-tags" name="tags" placeholder="Design, Astro" />
+          </div>
+          <div class="field">
+            <label for="post-create-status">状態</label>
+            <select id="post-create-status" name="status">
+              <option value="draft">draft</option>
+              <option value="published">published</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="post-create-publishedAt">公開日時</label>
+            <input id="post-create-publishedAt" name="publishedAt" type="datetime-local" value={toDateTimeLocal(new Date().toISOString())} required />
+          </div>
+          <div class="field">
+            <label for="post-create-body">本文</label>
+            <textarea id="post-create-body" name="body" rows="10" required></textarea>
+          </div>
+          <button class="button" type="submit">記事を作成</button>
+        </form>
+
+        <div class="admin-list">
+          {posts.map((post) => (
+            <form class="admin-form stack" method="post" action="/api/admin/posts">
+              <input type="hidden" name="id" value={post.id} />
+              <h3>{post.title}</h3>
+              <div class="field">
+                <label>slug</label>
+                <input name="slug" value={post.slug} required />
+              </div>
+              <div class="field">
+                <label>タイトル</label>
+                <input name="title" value={post.title} required />
+              </div>
+              <div class="field">
+                <label>概要</label>
+                <textarea name="description" rows="3" required>{post.description}</textarea>
+              </div>
+              <div class="field">
+                <label>タグ</label>
+                <input name="tags" value={toTagsInput(post.tags)} />
+              </div>
+              <div class="field">
+                <label>状態</label>
+                <select name="status">
+                  <option value="draft" selected={post.status === "draft"}>draft</option>
+                  <option value="published" selected={post.status === "published"}>published</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>公開日時</label>
+                <input name="publishedAt" type="datetime-local" value={toDateTimeLocal(post.publishedAt)} required />
+              </div>
+              <div class="field">
+                <label>本文</label>
+                <textarea name="body" rows="10" required>{post.body}</textarea>
+              </div>
+              <div class="button-row">
+                <button class="button" type="submit" name="_action" value="update">保存</button>
+                <button class="button button--secondary" type="submit" name="_action" value="delete">削除</button>
+              </div>
+            </form>
+          ))}
+        </div>
+      </div>
+    )}
+  </section>
+</BaseLayout>

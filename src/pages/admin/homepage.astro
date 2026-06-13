@@ -1,0 +1,85 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import SectionHeading from "../../components/SectionHeading.astro";
+import { getAdminPageData } from "../../lib/admin-page";
+
+const { session, db, status, error, homepage } = await getAdminPageData(Astro);
+---
+
+<BaseLayout title="Admin Homepage" description="Homepage settings">
+  <section class="page-section">
+    <SectionHeading
+      eyebrow="Admin"
+      title="トップページ設定"
+      intro="ヒーロー文言、自己紹介、連絡導線を編集します。"
+    />
+
+    {!db && (
+      <p class="notice notice--error" role="alert">
+        D1 binding `DB` が見つかりません。Cloudflare Worker の Variables and Bindings に D1 を追加してください。
+      </p>
+    )}
+
+    {status && <p class="notice notice--success" role="status">更新を反映しました。</p>}
+    {error && <p class="notice notice--error" role="alert">{error === "invalid" ? "入力内容を確認してください。" : "ログインが必要です。"}</p>}
+
+    {!session ? (
+      <div class="admin-shell stack">
+        <p>先に管理画面へログインしてください。</p>
+        <div class="button-row">
+          <a class="button" href="/admin">/admin へ戻る</a>
+        </div>
+      </div>
+    ) : (
+      <div class="admin-shell stack">
+        <div class="button-row">
+          <a class="button button--secondary" href="/admin">管理トップへ戻る</a>
+        </div>
+
+        {
+          homepage && (
+            <form class="admin-form stack" method="post" action="/api/admin/site-settings">
+              <div class="field">
+                <label for="heroEyebrow">ヒーロー上部ラベル</label>
+                <input id="heroEyebrow" name="heroEyebrow" value={homepage.heroEyebrow} />
+              </div>
+              <div class="field">
+                <label for="heroTitle">ヒーロータイトル</label>
+                <textarea id="heroTitle" name="heroTitle" rows="3">{homepage.heroTitle}</textarea>
+              </div>
+              <div class="field">
+                <label for="heroIntro">ヒーロー概要</label>
+                <textarea id="heroIntro" name="heroIntro" rows="4">{homepage.heroIntro}</textarea>
+              </div>
+              <div class="field">
+                <label for="aboutBody">自己紹介本文</label>
+                <textarea id="aboutBody" name="aboutBody" rows="5">{homepage.aboutBody}</textarea>
+              </div>
+              <div class="field">
+                <label for="specialties">専門領域</label>
+                <input id="specialties" name="specialties" value={homepage.specialties.join(", ")} />
+              </div>
+              <div class="field">
+                <label for="contactIntro">お問い合わせ導線</label>
+                <textarea id="contactIntro" name="contactIntro" rows="3">{homepage.contactIntro}</textarea>
+              </div>
+              <div class="field">
+                <label for="location">拠点</label>
+                <input id="location" name="location" value={homepage.location} />
+              </div>
+              <div class="field">
+                <label for="interests">関心領域</label>
+                <input id="interests" name="interests" value={homepage.interests} />
+              </div>
+              <div class="field">
+                <label for="email">メールアドレス</label>
+                <input id="email" name="email" type="email" value={homepage.email} />
+              </div>
+              <button class="button" type="submit">トップページ設定を保存</button>
+            </form>
+          )
+        }
+      </div>
+    )}
+  </section>
+</BaseLayout>
