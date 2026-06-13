@@ -29,7 +29,15 @@ insert or replace into posts (
     'デジタル庁デザインシステムを個人サイトへ取り込むときの考え方をまとめます。',
     '公共向けの設計思想をそのまま持ち込むのではなく、読みやすさとアクセシビリティを軸に翻訳して使います。
 
-今回のサイトでは、色、余白、フォーム、フォーカス表現を優先して合わせています。',
+今回のサイトでは、色、余白、フォーム、フォーカス表現を優先して合わせています。
+
+設計レビュー用の資料は、本文中にそのまま埋め込んで確認できます。
+
+::slide{src="https://docs.google.com/presentation/d/1Gk4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b/edit#slide=id.p1" title="Google Slides のサンプル" aspect="16:9"}
+
+配布用の PDF も同じ書式で並べられます。
+
+::slide{src="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" title="PDF のサンプル" aspect="16:9"}',
     'published',
     '2026-06-11T00:00:00.000Z',
     '2026-06-13T00:00:00.000Z',
@@ -69,7 +77,15 @@ insert or replace into works (
     'Astro と Cloudflare を使って、ブログと作品紹介を一体化した公開基盤を構築しました。',
     'ブログ、作品一覧、問い合わせフォーム、管理画面の導線を一つの構成にまとめたサンプル実装です。
 
-静的生成を基本としつつ、フォーム送信だけをサーバーサイドで処理する構成にしています。',
+静的生成を基本としつつ、フォーム送信だけをサーバーサイドで処理する構成にしています。
+
+デモでは、外部公開したスライド URL をそのまま作品本文に差し込めます。
+
+::slide{src="https://sli.dev/" title="Slidev 公開 URL のサンプル" aspect="16:9"}
+
+Marp で出力した HTML を置いている場合も同じです。
+
+::slide{src="https://marp.app/" title="Marp 公開 HTML のサンプル" aspect="16:9"}',
     'published',
     '2026-06-12T00:00:00.000Z',
     '2026-06-13T00:00:00.000Z',
