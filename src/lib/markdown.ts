@@ -49,10 +49,22 @@ function renderMarpDeck(source: string) {
 
 function renderMarpDeckHtml(html: string, css: string) {
   return [
-    '<div class="marp-deck">',
+    '<section class="marp-deck" data-marp-deck data-view="list" data-active-slide="0">',
+    '  <div class="marp-deck__toolbar">',
+    '    <div class="marp-deck__modes" role="group" aria-label="表示モード">',
+    '      <button type="button" class="marp-deck__button is-active" data-marp-action="list">一覧</button>',
+    '      <button type="button" class="marp-deck__button" data-marp-action="presentation">プレゼン</button>',
+    "    </div>",
+    '    <div class="marp-deck__actions">',
+    '      <button type="button" class="marp-deck__button" data-marp-action="prev" aria-label="前のスライド">前へ</button>',
+    '      <p class="marp-deck__status" data-marp-status aria-live="polite"></p>',
+    '      <button type="button" class="marp-deck__button" data-marp-action="next" aria-label="次のスライド">次へ</button>',
+    '      <button type="button" class="marp-deck__button" data-marp-action="fullscreen">全画面</button>',
+    "    </div>",
+    "  </div>",
     `  <style>${css}</style>`,
     `  <div class="marp-deck__slides">${html}</div>`,
-    "</div>"
+    "</section>"
   ].join("\n");
 }
 

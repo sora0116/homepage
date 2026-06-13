@@ -29,6 +29,7 @@ const { id, name, label, rows = 10, value = "" } = Astro.props;
 
 <script>
   const markdownRendererPromise = import("../lib/markdown");
+  const marpDeckPromise = import("../lib/marp-deck");
 
   for (const rawEditor of document.querySelectorAll("[data-markdown-editor]")) {
     const editor = rawEditor as HTMLElement;
@@ -41,6 +42,8 @@ const { id, name, label, rows = 10, value = "" } = Astro.props;
     const render = async () => {
       const { renderMarkdown } = await markdownRendererPromise;
       preview.innerHTML = renderMarkdown(input.value || "");
+      const { initMarpDecks } = await marpDeckPromise;
+      initMarpDecks(preview);
     };
 
     input.addEventListener("input", render);
