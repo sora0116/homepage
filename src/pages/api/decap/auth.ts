@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createCodeChallenge, createCookie, createRandomString } from "../../../lib/oauth";
+import { getRuntimeEnv } from "../../../lib/runtime-env";
 
 const STATE_COOKIE = "decap_oauth_state";
 const VERIFIER_COOKIE = "decap_oauth_verifier";
@@ -10,13 +11,13 @@ function html(body: string) {
   });
 }
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, locals }) => {
   const provider = url.searchParams.get("provider");
   if (provider !== "github") {
     return html("<p>Unsupported provider.</p>");
   }
 
-  const clientId = import.meta.env.GITHUB_OAUTH_CLIENT_ID;
+  const clientId = getRuntimeEnv(locals, "GITHUB_OAUTH_CLIENT_ID");
   if (!clientId) {
     return html("<p>Missing GITHUB_OAUTH_CLIENT_ID.</p>");
   }
@@ -25,7 +26,7 @@ export const GET: APIRoute = async ({ url }) => {
   const verifier = createRandomString(48);
   const challenge = await createCodeChallenge(verifier);
   const redirectUri = `${url.origin}/api/decap/auth/callback`;
-  const scope = import.meta.env.GITHUB_OAUTH_SCOPE || "public_repo";
+  const scope = getRuntimeEnv(locals, "GITHUB_OAUTH_SCOPE") || "public_repo";
   const authorizeUrl = new URL("https://github.com/login/oauth/authorize");
 
   authorizeUrl.searchParams.set("client_id", clientId);

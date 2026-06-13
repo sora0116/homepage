@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { getRuntimeEnv } from "../../lib/runtime-env";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -21,7 +22,7 @@ function jsonError(message: string, status: number) {
   });
 }
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   if (!isFormSubmission(request)) {
     return jsonError("Unsupported content type", 415);
   }
@@ -44,7 +45,7 @@ export const POST: APIRoute = async ({ request }) => {
     return redirectToContact("email");
   }
 
-  const webhookUrl = import.meta.env.CONTACT_WEBHOOK_URL;
+  const webhookUrl = getRuntimeEnv(locals, "CONTACT_WEBHOOK_URL");
   if (webhookUrl) {
     const upstream = await fetch(webhookUrl, {
       method: "POST",

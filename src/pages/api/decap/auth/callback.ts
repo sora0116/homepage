@@ -3,6 +3,7 @@ import {
   clearCookie,
   getCookieValue
 } from "../../../../lib/oauth";
+import { getRuntimeEnv } from "../../../../lib/runtime-env";
 
 const STATE_COOKIE = "decap_oauth_state";
 const VERIFIER_COOKIE = "decap_oauth_verifier";
@@ -42,7 +43,7 @@ function html(body: string, clear = false) {
   return new Response(body, { headers });
 }
 
-export const GET: APIRoute = async ({ request, url }) => {
+export const GET: APIRoute = async ({ request, url, locals }) => {
   const state = url.searchParams.get("state");
   const code = url.searchParams.get("code");
   const error = url.searchParams.get("error");
@@ -69,8 +70,8 @@ export const GET: APIRoute = async ({ request, url }) => {
     );
   }
 
-  const clientId = import.meta.env.GITHUB_OAUTH_CLIENT_ID;
-  const clientSecret = import.meta.env.GITHUB_OAUTH_CLIENT_SECRET;
+  const clientId = getRuntimeEnv(locals, "GITHUB_OAUTH_CLIENT_ID");
+  const clientSecret = getRuntimeEnv(locals, "GITHUB_OAUTH_CLIENT_SECRET");
   if (!clientId || !clientSecret) {
     return html(
       renderMessage("error", {
