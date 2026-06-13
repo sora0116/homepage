@@ -42,6 +42,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   const formData = await request.formData();
   const action = String(formData.get("_action") || "");
+  const returnTo = String(formData.get("returnTo") || "/admin/works");
   const id = String(formData.get("id") || "").trim();
   const slug = String(formData.get("slug") || "").trim();
   const title = String(formData.get("title") || "").trim();
@@ -56,14 +57,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
   try {
     if (action === "delete") {
       if (!id) {
-        return redirect("/admin?error=invalid");
+        return redirect(`${returnTo}?error=invalid`);
       }
       await deleteWork(db, id);
-      return redirect("/admin?status=works");
+      return redirect("/admin/works?status=works");
     }
 
     if (!slug || !title || !summary || !body || !publishedAt) {
-      return redirect("/admin?error=invalid");
+      return redirect(`${returnTo}?error=invalid`);
     }
 
     await upsertWork(db, {
@@ -79,11 +80,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
       featured
     });
 
-    return redirect("/admin?status=works");
+    return redirect(`${returnTo}?status=works`);
   } catch (error) {
     if (error instanceof Error && error.message === "WORK_SLUG_EXISTS") {
-      return redirect("/admin?error=work_slug");
+      return redirect(`${returnTo}?error=work_slug`);
     }
-    return redirect("/admin?error=invalid");
+    return redirect(`${returnTo}?error=invalid`);
   }
 };

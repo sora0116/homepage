@@ -30,6 +30,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   const formData = await request.formData();
   const action = String(formData.get("_action") || "");
+  const returnTo = String(formData.get("returnTo") || "/admin/posts");
   const id = String(formData.get("id") || "").trim();
   const slug = String(formData.get("slug") || "").trim();
   const title = String(formData.get("title") || "").trim();
@@ -42,14 +43,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
   try {
     if (action === "delete") {
       if (!id) {
-        return redirect("/admin?error=invalid");
+        return redirect(`${returnTo}?error=invalid`);
       }
       await deletePost(db, id);
-      return redirect("/admin?status=posts");
+      return redirect("/admin/posts?status=posts");
     }
 
     if (!slug || !title || !description || !body || !publishedAt) {
-      return redirect("/admin?error=invalid");
+      return redirect(`${returnTo}?error=invalid`);
     }
 
     await upsertPost(db, {
@@ -63,11 +64,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
       tags
     });
 
-    return redirect("/admin?status=posts");
+    return redirect(`${returnTo}?status=posts`);
   } catch (error) {
     if (error instanceof Error && error.message === "POST_SLUG_EXISTS") {
-      return redirect("/admin?error=post_slug");
+      return redirect(`${returnTo}?error=post_slug`);
     }
-    return redirect("/admin?error=invalid");
+    return redirect(`${returnTo}?error=invalid`);
   }
 };

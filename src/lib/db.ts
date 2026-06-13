@@ -220,6 +220,21 @@ export async function getPostBySlug(
   return result ? mapPost(result) : null;
 }
 
+export async function getPostById(
+  db: D1DatabaseLike | null,
+  id: string
+) {
+  if (!db) {
+    return defaultPosts.find((post) => post.id === id) || null;
+  }
+
+  const result = await db
+    .prepare(`select * from posts where id = ? limit 1`)
+    .bind(id)
+    .first<PostRow>();
+  return result ? mapPost(result) : null;
+}
+
 export async function listWorks(db: D1DatabaseLike | null, includeDrafts = false) {
   if (!db) {
     return sortByPublishedAt(
@@ -251,6 +266,21 @@ export async function getWorkBySlug(
     ? `select * from works where slug = ? limit 1`
     : `select * from works where slug = ? and status = 'published' limit 1`;
   const result = await db.prepare(query).bind(slug).first<WorkRow>();
+  return result ? mapWork(result) : null;
+}
+
+export async function getWorkById(
+  db: D1DatabaseLike | null,
+  id: string
+) {
+  if (!db) {
+    return defaultWorks.find((work) => work.id === id) || null;
+  }
+
+  const result = await db
+    .prepare(`select * from works where id = ? limit 1`)
+    .bind(id)
+    .first<WorkRow>();
   return result ? mapWork(result) : null;
 }
 

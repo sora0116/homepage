@@ -1,0 +1,87 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import SectionHeading from "../../../components/SectionHeading.astro";
+import { getAdminPageData, toDateTimeLocal, toLinksInput, toTagsInput } from "../../../lib/admin-page";
+import { getWorkById } from "../../../lib/db";
+
+const { session, db, status, error } = await getAdminPageData(Astro);
+const id = Astro.params.id || "";
+const work = session ? await getWorkById(db, id) : null;
+---
+
+<BaseLayout title="Edit Work" description="Edit work">
+  <section class="page-section">
+    <SectionHeading eyebrow="Admin" title="作品編集" intro="選択した作品だけに集中して編集します。" />
+    {!db && <p class="notice notice--error" role="alert">D1 binding `DB` が見つかりません。</p>}
+    {status && <p class="notice notice--success" role="status">更新を反映しました。</p>}
+    {error && <p class="notice notice--error" role="alert">{error === "work_slug" ? "作品 slug が重複しています。" : error === "invalid" ? "入力内容を確認してください。" : "ログインが必要です。"}</p>}
+
+    {!session ? (
+      <div class="admin-shell stack">
+        <p>先に管理画面へログインしてください。</p>
+        <a class="button" href="/admin">/admin へ戻る</a>
+      </div>
+    ) : !work ? (
+      <div class="admin-shell stack">
+        <p>指定した作品が見つかりません。</p>
+        <a class="button" href="/admin/works">作品一覧へ戻る</a>
+      </div>
+    ) : (
+      <div class="admin-shell stack">
+        <div class="button-row">
+          <a class="button button--secondary" href="/admin/works">作品一覧へ戻る</a>
+          <a class="button button--secondary" href={`/works/${work.slug}/`}>公開ページ</a>
+        </div>
+        <form class="admin-form stack" method="post" action="/api/admin/works">
+          <input type="hidden" name="id" value={work.id} />
+          <input type="hidden" name="returnTo" value={`/admin/works/${work.id}`} />
+          <div class="field">
+            <label for="slug">slug</label>
+            <input id="slug" name="slug" value={work.slug} required />
+          </div>
+          <div class="field">
+            <label for="title">タイトル</label>
+            <input id="title" name="title" value={work.title} required />
+          </div>
+          <div class="field">
+            <label for="summary">概要</label>
+            <textarea id="summary" name="summary" rows="3" required>{work.summary}</textarea>
+          </div>
+          <div class="field">
+            <label for="tags">タグ</label>
+            <input id="tags" name="tags" value={toTagsInput(work.tags)} />
+          </div>
+          <div class="field">
+            <label for="links">リンク</label>
+            <textarea id="links" name="links" rows="3">{toLinksInput(work.links)}</textarea>
+          </div>
+          <div class="field">
+            <label for="status">状態</label>
+            <select id="status" name="status">
+              <option value="draft" selected={work.status === "draft"}>draft</option>
+              <option value="published" selected={work.status === "published"}>published</option>
+            </select>
+          </div>
+          <div class="field checkbox-field">
+            <label>
+              <input id="featured" name="featured" type="checkbox" value="true" checked={work.featured} />
+              トップに表示
+            </label>
+          </div>
+          <div class="field">
+            <label for="publishedAt">公開日時</label>
+            <input id="publishedAt" name="publishedAt" type="datetime-local" value={toDateTimeLocal(work.publishedAt)} required />
+          </div>
+          <div class="field">
+            <label for="body">本文</label>
+            <textarea id="body" name="body" rows="8" required>{work.body}</textarea>
+          </div>
+          <div class="button-row">
+            <button class="button" type="submit" name="_action" value="update">保存</button>
+            <button class="button button--secondary" type="submit" name="_action" value="delete">削除</button>
+          </div>
+        </form>
+      </div>
+    )}
+  </section>
+</BaseLayout>

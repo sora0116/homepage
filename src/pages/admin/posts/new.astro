@@ -1,0 +1,65 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import SectionHeading from "../../../components/SectionHeading.astro";
+import { getAdminPageData, toDateTimeLocal } from "../../../lib/admin-page";
+
+const { session, db, status, error } = await getAdminPageData(Astro);
+---
+
+<BaseLayout title="New Post" description="Create post">
+  <section class="page-section">
+    <SectionHeading eyebrow="Admin" title="新規記事" intro="新しい記事を作成します。" />
+    {!db && <p class="notice notice--error" role="alert">D1 binding `DB` が見つかりません。</p>}
+    {status && <p class="notice notice--success" role="status">更新を反映しました。</p>}
+    {error && <p class="notice notice--error" role="alert">{error === "post_slug" ? "記事 slug が重複しています。" : error === "invalid" ? "入力内容を確認してください。" : "ログインが必要です。"}</p>}
+
+    {!session ? (
+      <div class="admin-shell stack">
+        <p>先に管理画面へログインしてください。</p>
+        <a class="button" href="/admin">/admin へ戻る</a>
+      </div>
+    ) : (
+      <div class="admin-shell stack">
+        <div class="button-row">
+          <a class="button button--secondary" href="/admin/posts">記事一覧へ戻る</a>
+        </div>
+        <form class="admin-form stack" method="post" action="/api/admin/posts">
+          <input type="hidden" name="_action" value="create" />
+          <input type="hidden" name="returnTo" value="/admin/posts/new" />
+          <div class="field">
+            <label for="slug">slug</label>
+            <input id="slug" name="slug" required />
+          </div>
+          <div class="field">
+            <label for="title">タイトル</label>
+            <input id="title" name="title" required />
+          </div>
+          <div class="field">
+            <label for="description">概要</label>
+            <textarea id="description" name="description" rows="3" required></textarea>
+          </div>
+          <div class="field">
+            <label for="tags">タグ</label>
+            <input id="tags" name="tags" placeholder="Design, Astro" />
+          </div>
+          <div class="field">
+            <label for="status">状態</label>
+            <select id="status" name="status">
+              <option value="draft">draft</option>
+              <option value="published">published</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="publishedAt">公開日時</label>
+            <input id="publishedAt" name="publishedAt" type="datetime-local" value={toDateTimeLocal(new Date().toISOString())} required />
+          </div>
+          <div class="field">
+            <label for="body">本文</label>
+            <textarea id="body" name="body" rows="10" required></textarea>
+          </div>
+          <button class="button" type="submit">記事を作成</button>
+        </form>
+      </div>
+    )}
+  </section>
+</BaseLayout>

@@ -1,7 +1,8 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import SectionHeading from "../../components/SectionHeading.astro";
-import { getAdminPageData, toDateTimeLocal, toLinksInput, toTagsInput } from "../../lib/admin-page";
+import { getAdminPageData } from "../../lib/admin-page";
+import { formatDateTime } from "../../lib/db";
 
 const { session, db, status, error, works } = await getAdminPageData(Astro);
 ---
@@ -11,7 +12,7 @@ const { session, db, status, error, works } = await getAdminPageData(Astro);
     <SectionHeading
       eyebrow="Admin"
       title="作品管理"
-      intro="作品一覧、本文、featured 表示を管理します。"
+      intro="作品の一覧確認と個別編集画面への導線をまとめています。"
     />
 
     {!db && (
@@ -34,106 +35,27 @@ const { session, db, status, error, works } = await getAdminPageData(Astro);
       <div class="admin-shell stack">
         <div class="button-row">
           <a class="button button--secondary" href="/admin">管理トップへ戻る</a>
+          <a class="button" href="/admin/works/new">新規作品を作成</a>
         </div>
-
-        <form class="admin-form stack" method="post" action="/api/admin/works">
-          <input type="hidden" name="_action" value="create" />
-          <h3>新規作品</h3>
-          <div class="field">
-            <label for="work-create-slug">slug</label>
-            <input id="work-create-slug" name="slug" required />
-          </div>
-          <div class="field">
-            <label for="work-create-title">タイトル</label>
-            <input id="work-create-title" name="title" required />
-          </div>
-          <div class="field">
-            <label for="work-create-summary">概要</label>
-            <textarea id="work-create-summary" name="summary" rows="3" required></textarea>
-          </div>
-          <div class="field">
-            <label for="work-create-tags">タグ</label>
-            <input id="work-create-tags" name="tags" placeholder="Astro, Cloudflare" />
-          </div>
-          <div class="field">
-            <label for="work-create-links">リンク</label>
-            <textarea id="work-create-links" name="links" rows="3" placeholder="GitHub|https://github.com/...\nDemo|https://..."></textarea>
-          </div>
-          <div class="field">
-            <label for="work-create-status">状態</label>
-            <select id="work-create-status" name="status">
-              <option value="draft">draft</option>
-              <option value="published">published</option>
-            </select>
-          </div>
-          <div class="field checkbox-field">
-            <label>
-              <input id="work-create-featured" name="featured" type="checkbox" value="true" />
-              トップ表示
-            </label>
-          </div>
-          <div class="field">
-            <label for="work-create-publishedAt">公開日時</label>
-            <input id="work-create-publishedAt" name="publishedAt" type="datetime-local" value={toDateTimeLocal(new Date().toISOString())} required />
-          </div>
-          <div class="field">
-            <label for="work-create-body">本文</label>
-            <textarea id="work-create-body" name="body" rows="8" required></textarea>
-          </div>
-          <button class="button" type="submit">作品を作成</button>
-        </form>
 
         <div class="admin-list">
           {works.map((work) => (
-            <form class="admin-form stack" method="post" action="/api/admin/works">
-              <input type="hidden" name="id" value={work.id} />
-              <h3>{work.title}</h3>
-              <div class="field">
-                <label>slug</label>
-                <input name="slug" value={work.slug} required />
+            <article class="admin-card stack">
+              <div class="admin-inquiry-header">
+                <div class="stack">
+                  <h3>{work.title}</h3>
+                  <p class="meta">
+                    {work.slug} / {formatDateTime(work.publishedAt)}
+                  </p>
+                </div>
+                <p class="meta">status: {work.status} / featured: {work.featured ? "yes" : "no"}</p>
               </div>
-              <div class="field">
-                <label>タイトル</label>
-                <input name="title" value={work.title} required />
-              </div>
-              <div class="field">
-                <label>概要</label>
-                <textarea name="summary" rows="3" required>{work.summary}</textarea>
-              </div>
-              <div class="field">
-                <label>タグ</label>
-                <input name="tags" value={toTagsInput(work.tags)} />
-              </div>
-              <div class="field">
-                <label>リンク</label>
-                <textarea name="links" rows="3">{toLinksInput(work.links)}</textarea>
-              </div>
-              <div class="field">
-                <label>状態</label>
-                <select name="status">
-                  <option value="draft" selected={work.status === "draft"}>draft</option>
-                  <option value="published" selected={work.status === "published"}>published</option>
-                </select>
-              </div>
-              <div class="field checkbox-field">
-                <label>
-                  <input name="featured" type="checkbox" value="true" checked={work.featured} />
-                  トップに表示
-                </label>
-              </div>
-              <div class="field">
-                <label>公開日時</label>
-                <input name="publishedAt" type="datetime-local" value={toDateTimeLocal(work.publishedAt)} required />
-              </div>
-              <div class="field">
-                <label>本文</label>
-                <textarea name="body" rows="8" required>{work.body}</textarea>
-              </div>
+              <p>{work.summary}</p>
               <div class="button-row">
-                <button class="button" type="submit" name="_action" value="update">保存</button>
-                <button class="button button--secondary" type="submit" name="_action" value="delete">削除</button>
+                <a class="button" href={`/admin/works/${work.id}`}>この作品を編集</a>
+                <a class="button button--secondary" href={`/works/${work.slug}/`}>公開ページ</a>
               </div>
-            </form>
+            </article>
           ))}
         </div>
       </div>

@@ -1,0 +1,75 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import SectionHeading from "../../../components/SectionHeading.astro";
+import { getAdminPageData, toDateTimeLocal } from "../../../lib/admin-page";
+
+const { session, db, status, error } = await getAdminPageData(Astro);
+---
+
+<BaseLayout title="New Work" description="Create work">
+  <section class="page-section">
+    <SectionHeading eyebrow="Admin" title="新規作品" intro="新しい作品を作成します。" />
+    {!db && <p class="notice notice--error" role="alert">D1 binding `DB` が見つかりません。</p>}
+    {status && <p class="notice notice--success" role="status">更新を反映しました。</p>}
+    {error && <p class="notice notice--error" role="alert">{error === "work_slug" ? "作品 slug が重複しています。" : error === "invalid" ? "入力内容を確認してください。" : "ログインが必要です。"}</p>}
+
+    {!session ? (
+      <div class="admin-shell stack">
+        <p>先に管理画面へログインしてください。</p>
+        <a class="button" href="/admin">/admin へ戻る</a>
+      </div>
+    ) : (
+      <div class="admin-shell stack">
+        <div class="button-row">
+          <a class="button button--secondary" href="/admin/works">作品一覧へ戻る</a>
+        </div>
+        <form class="admin-form stack" method="post" action="/api/admin/works">
+          <input type="hidden" name="_action" value="create" />
+          <input type="hidden" name="returnTo" value="/admin/works/new" />
+          <div class="field">
+            <label for="slug">slug</label>
+            <input id="slug" name="slug" required />
+          </div>
+          <div class="field">
+            <label for="title">タイトル</label>
+            <input id="title" name="title" required />
+          </div>
+          <div class="field">
+            <label for="summary">概要</label>
+            <textarea id="summary" name="summary" rows="3" required></textarea>
+          </div>
+          <div class="field">
+            <label for="tags">タグ</label>
+            <input id="tags" name="tags" placeholder="Astro, Cloudflare" />
+          </div>
+          <div class="field">
+            <label for="links">リンク</label>
+            <textarea id="links" name="links" rows="3" placeholder="GitHub|https://github.com/...\nDemo|https://..."></textarea>
+          </div>
+          <div class="field">
+            <label for="status">状態</label>
+            <select id="status" name="status">
+              <option value="draft">draft</option>
+              <option value="published">published</option>
+            </select>
+          </div>
+          <div class="field checkbox-field">
+            <label>
+              <input id="featured" name="featured" type="checkbox" value="true" />
+              トップ表示
+            </label>
+          </div>
+          <div class="field">
+            <label for="publishedAt">公開日時</label>
+            <input id="publishedAt" name="publishedAt" type="datetime-local" value={toDateTimeLocal(new Date().toISOString())} required />
+          </div>
+          <div class="field">
+            <label for="body">本文</label>
+            <textarea id="body" name="body" rows="8" required></textarea>
+          </div>
+          <button class="button" type="submit">作品を作成</button>
+        </form>
+      </div>
+    )}
+  </section>
+</BaseLayout>
