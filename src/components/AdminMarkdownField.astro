@@ -1,4 +1,6 @@
 ---
+import DadsButton from "./DadsButton.astro";
+
 interface Props {
   id: string;
   name: string;
@@ -13,16 +15,48 @@ const { id, name, label, rows = 10, value = "" } = Astro.props;
 <div class="dads-form-control-label app-field" data-size="md">
   <label class="dads-form-control-label__label" for={id}>{label}</label>
   <div class="markdown-editor" data-markdown-editor>
-    <span class="dads-textarea app-textarea">
-      <textarea
-        id={id}
-        name={name}
-        rows={rows}
-        required
-        class="dads-textarea__textarea"
-        data-markdown-input
-      >{value}</textarea>
-    </span>
+    <div class="markdown-input-wrap">
+      <div class="markdown-toolbar">
+        <DadsButton tone="outline" type="button" className="markdown-upload-button">
+          画像/ファイルを追加
+        </DadsButton>
+        <DadsButton tone="outline" type="button" className="markdown-library-button">
+          アップロード済みから選ぶ
+        </DadsButton>
+        <input type="file" hidden data-upload-input multiple />
+        <p class="markdown-toolbar__meta">画像はそのまま埋め込み、その他はリンクとして本文に追加します。</p>
+      </div>
+      <p class="markdown-upload-status" data-upload-status aria-live="polite"></p>
+      <div class="markdown-library" data-media-library hidden>
+        <div class="markdown-library__header">
+          <label class="markdown-library__search-label" for={`${id}-media-search`}>再利用する画像・ファイルを選ぶ</label>
+          <div class="markdown-library__actions">
+            <input
+              id={`${id}-media-search`}
+              class="markdown-library__search"
+              type="search"
+              placeholder="ファイル名で検索"
+              data-media-search
+            />
+            <DadsButton tone="text" type="button" className="markdown-library-refresh">
+              更新
+            </DadsButton>
+          </div>
+        </div>
+        <div class="markdown-library__status" data-media-status aria-live="polite"></div>
+        <div class="markdown-library__grid" data-media-results></div>
+      </div>
+      <span class="dads-textarea app-textarea">
+        <textarea
+          id={id}
+          name={name}
+          rows={rows}
+          required
+          class="dads-textarea__textarea"
+          data-markdown-input
+        >{value}</textarea>
+      </span>
+    </div>
     <div class="markdown-preview-wrap">
       <p class="meta">プレビュー</p>
       <div class="markdown-preview prose" data-markdown-preview></div>
@@ -40,7 +74,28 @@ const { id, name, label, rows = 10, value = "" } = Astro.props;
     editor.dataset.markdownReady = "true";
     const input = editor.querySelector("[data-markdown-input]");
     const preview = editor.querySelector("[data-markdown-preview]");
+    const uploadTrigger = editor.querySelector(".markdown-upload-button");
+    const libraryTrigger = editor.querySelector(".markdown-library-button");
+    const uploadInput = editor.querySelector("[data-upload-input]");
+    const uploadStatus = editor.querySelector("[data-upload-status]");
+    const mediaLibrary = editor.querySelector("[data-media-library]");
+    const mediaSearch = editor.querySelector("[data-media-search]");
+    const mediaStatus = editor.querySelector("[data-media-status]");
+    const mediaResults = editor.querySelector("[data-media-results]");
+    const mediaRefresh = editor.querySelector(".markdown-library-refresh");
     if (!(input instanceof HTMLTextAreaElement) || !(preview instanceof HTMLElement)) continue;
+
+    let mediaSearchTimer: number | undefined;
+
+    type MediaAsset = {
+      id: string;
+      fileName: string;
+      contentType: string;
+      sizeBytes: number;
+      createdBy: string | null;
+      createdAt: string;
+      url: string;
+    };
 
     const render = async () => {
       const { renderMarkdown } = await markdownRendererPromise;
@@ -49,7 +104,202 @@ const { id, name, label, rows = 10, value = "" } = Astro.props;
       initMarpDecks(preview);
     };
 
+    const setUploadStatus = (message: string, tone: "idle" | "error" = "idle") => {
+      if (!(uploadStatus instanceof HTMLElement)) return;
+      uploadStatus.textContent = message;
+      uploadStatus.dataset.tone = tone;
+    };
+
+    const insertMarkdown = (markdown: string) => {
+      const selectionStart = input.selectionStart ?? input.value.length;
+      const selectionEnd = input.selectionEnd ?? input.value.length;
+      const before = input.value.slice(0, selectionStart);
+      const after = input.value.slice(selectionEnd);
+      const needsLeadingBreak = before.length > 0 && !before.endsWith("\n") ? "\n" : "";
+      const needsTrailingBreak =
+        after.length > 0 && !after.startsWith("\n") ? "\n" : "";
+      const insertedText = `${needsLeadingBreak}${markdown}${needsTrailingBreak}`;
+      input.value = `${before}${insertedText}${after}`;
+      const caret = before.length + insertedText.length;
+      input.focus();
+      input.setSelectionRange(caret, caret);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+
+    const createMarkdown = (asset: MediaAsset) => {
+      const alt =
+        asset.fileName
+          .replace(/\.[^.]+$/, "")
+          .replaceAll(/[-_]+/g, " ")
+          .trim() || "attachment";
+      return asset.contentType.startsWith("image/")
+        ? `![${alt}](${asset.url})`
+        : `[${asset.fileName}](${asset.url})`;
+    };
+
+    const setMediaStatus = (message: string, tone: "idle" | "error" = "idle") => {
+      if (!(mediaStatus instanceof HTMLElement)) return;
+      mediaStatus.textContent = message;
+      mediaStatus.dataset.tone = tone;
+    };
+
+    const formatAssetMeta = (asset: MediaAsset) => {
+      const sizeKb = asset.sizeBytes >= 1024 * 1024
+        ? `${(asset.sizeBytes / (1024 * 1024)).toFixed(1)}MB`
+        : `${Math.max(1, Math.round(asset.sizeBytes / 1024))}KB`;
+      return [asset.contentType.split("/")[0], sizeKb, asset.createdBy || ""]
+        .filter(Boolean)
+        .join(" / ");
+    };
+
+    const renderMediaResults = (assets: MediaAsset[]) => {
+      if (!(mediaResults instanceof HTMLElement)) return;
+      mediaResults.innerHTML = "";
+
+      if (assets.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "markdown-library__empty";
+        empty.textContent = "まだアップロード済みメディアがありません。";
+        mediaResults.append(empty);
+        return;
+      }
+
+      for (const asset of assets) {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "markdown-library__item";
+        card.title = `${asset.fileName} を本文へ追加`;
+        card.addEventListener("click", () => {
+          insertMarkdown(createMarkdown(asset));
+          setUploadStatus(`${asset.fileName} を本文へ追加しました。`);
+        });
+
+        if (asset.contentType.startsWith("image/")) {
+          const image = document.createElement("img");
+          image.className = "markdown-library__thumb";
+          image.src = asset.url;
+          image.alt = asset.fileName;
+          image.loading = "lazy";
+          card.append(image);
+        } else {
+          const fileThumb = document.createElement("div");
+          fileThumb.className = "markdown-library__file";
+          fileThumb.textContent = asset.fileName.split(".").pop()?.toUpperCase() || "FILE";
+          card.append(fileThumb);
+        }
+
+        const body = document.createElement("div");
+        body.className = "markdown-library__item-body";
+
+        const name = document.createElement("p");
+        name.className = "markdown-library__item-name";
+        name.textContent = asset.fileName;
+        body.append(name);
+
+        const meta = document.createElement("p");
+        meta.className = "markdown-library__item-meta";
+        meta.textContent = formatAssetMeta(asset);
+        body.append(meta);
+
+        card.append(body);
+        mediaResults.append(card);
+      }
+    };
+
+    const loadMediaAssets = async () => {
+      if (!(mediaResults instanceof HTMLElement)) return;
+      const searchValue =
+        mediaSearch instanceof HTMLInputElement ? mediaSearch.value.trim() : "";
+      setMediaStatus("アップロード済みメディアを読み込み中...");
+
+      try {
+        const response = await fetch(
+          `/api/admin/uploads${searchValue ? `?q=${encodeURIComponent(searchValue)}` : ""}`,
+          { credentials: "same-origin" }
+        );
+        const payload = (await response.json().catch(() => null)) as
+          | { data?: MediaAsset[]; error?: string }
+          | null;
+        if (!response.ok || !payload?.data) {
+          throw new Error(payload?.error || "load_failed");
+        }
+        renderMediaResults(payload.data);
+        setMediaStatus(searchValue ? `「${searchValue}」の検索結果` : "最近アップロードしたメディア");
+      } catch {
+        setMediaStatus("メディア一覧の取得に失敗しました。", "error");
+      }
+    };
+
+    const uploadFiles = async (files: FileList) => {
+      if (files.length === 0) return;
+      if (!(uploadTrigger instanceof HTMLButtonElement)) return;
+
+      uploadTrigger.disabled = true;
+      setUploadStatus(`${files.length}件をアップロード中...`);
+
+      try {
+        for (const file of Array.from(files)) {
+          const formData = new FormData();
+          formData.set("file", file);
+          const response = await fetch("/api/admin/uploads", {
+            method: "POST",
+            body: formData,
+            credentials: "same-origin"
+          });
+          const payload = (await response.json().catch(() => null)) as
+            | { data?: { markdown?: string; fileName?: string }; error?: string }
+            | null;
+
+          if (!response.ok || !payload?.data?.markdown) {
+            throw new Error(payload?.error || "upload_failed");
+          }
+
+          insertMarkdown(payload.data.markdown);
+          setUploadStatus(`${payload.data.fileName || "ファイル"} を追加しました。`);
+        }
+        await loadMediaAssets();
+      } catch (error) {
+        const message =
+          error instanceof Error && error.message === "file_too_large"
+            ? "10MB 以下のファイルだけ追加できます。"
+            : "アップロードに失敗しました。";
+        setUploadStatus(message, "error");
+      } finally {
+        uploadTrigger.disabled = false;
+        if (uploadInput instanceof HTMLInputElement) {
+          uploadInput.value = "";
+        }
+      }
+    };
+
     input.addEventListener("input", render);
+    uploadTrigger?.addEventListener("click", () => {
+      if (uploadInput instanceof HTMLInputElement) {
+        uploadInput.click();
+      }
+    });
+    libraryTrigger?.addEventListener("click", () => {
+      if (!(mediaLibrary instanceof HTMLElement)) return;
+      const isHidden = mediaLibrary.hidden;
+      mediaLibrary.hidden = !isHidden;
+      if (isHidden) {
+        void loadMediaAssets();
+      }
+    });
+    uploadInput?.addEventListener("change", () => {
+      if (uploadInput instanceof HTMLInputElement && uploadInput.files) {
+        void uploadFiles(uploadInput.files);
+      }
+    });
+    mediaRefresh?.addEventListener("click", () => {
+      void loadMediaAssets();
+    });
+    mediaSearch?.addEventListener("input", () => {
+      window.clearTimeout(mediaSearchTimer);
+      mediaSearchTimer = window.setTimeout(() => {
+        void loadMediaAssets();
+      }, 220);
+    });
     void render();
   }
 </script>

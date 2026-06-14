@@ -24,8 +24,31 @@ type D1DatabaseLike = {
   };
 };
 
+type LocalMediaObject = {
+  httpMetadata?: {
+    contentType?: string;
+    contentDisposition?: string;
+    cacheControl?: string;
+  };
+  arrayBuffer(): Promise<ArrayBuffer>;
+  body: ReadableStream<Uint8Array> | null;
+};
+
+type LocalMediaBucket = {
+  put: (
+    key: string,
+    value: ArrayBuffer | Uint8Array | ReadableStream<Uint8Array>,
+    options?: {
+      httpMetadata?: LocalMediaObject["httpMetadata"];
+      customMetadata?: Record<string, string>;
+    }
+  ) => Promise<void>;
+  get: (key: string) => Promise<LocalMediaObject | null>;
+};
+
 type LocalDevRuntime = {
   db: D1DatabaseLike;
+  mediaBucket: LocalMediaBucket;
   env: Record<string, string>;
 };
 
@@ -69,8 +92,11 @@ export async function resetLocalDevDatabase() {
 
 async function createLocalDevRuntime(): Promise<LocalDevRuntime> {
   const env = await loadLocalDevVars();
-  const db = await createLocalDevDatabase();
-  return { env, db };
+  const [db, mediaBucket] = await Promise.all([
+    createLocalDevDatabase(),
+    createLocalMediaBucket()
+  ]);
+  return { env, db, mediaBucket };
 }
 
 async function loadLocalDevVars() {
@@ -166,6 +192,20 @@ async function applyLocalDevMigrations(db: SQLiteDatabase) {
       )
     );
   }
+
+  const mediaAssetTable = db
+    .prepare(
+      "select name from sqlite_master where type = 'table' and name = 'media_assets' limit 1"
+    )
+    .get() as { name?: string } | undefined;
+  if (!mediaAssetTable?.name) {
+    db.exec(
+      await readFile(
+        resolve(process.cwd(), "db/migrations/0003_media_assets.sql"),
+        "utf8"
+      )
+    );
+  }
 }
 
 function createD1Adapter(db: SQLiteDatabase): D1DatabaseLike {
@@ -191,4 +231,116 @@ function createD1Adapter(db: SQLiteDatabase): D1DatabaseLike {
       };
     }
   };
+}
+
+async function createLocalMediaBucket(): Promise<LocalMediaBucket> {
+  const [{ mkdir, readFile, writeFile }, pathModule] = await Promise.all([
+    import("node:fs/promises"),
+    import("node:path")
+  ]);
+
+  const rootDir = pathModule.resolve(process.cwd(), ".wrangler/state/local-dev/media");
+  await mkdir(rootDir, { recursive: true });
+
+  function resolveKeyPath(key: string) {
+    const segments = key.split("/").filter(Boolean);
+    if (segments.length === 0 || segments.some((segment) => segment === "." || segment === "..")) {
+      throw new Error("INVALID_MEDIA_KEY");
+    }
+    return pathModule.join(rootDir, ...segments);
+  }
+
+  return {
+    async put(key, value, options) {
+      const filePath = resolveKeyPath(key);
+      const metadataPath = `${filePath}.meta.json`;
+      await mkdir(pathModule.dirname(filePath), { recursive: true });
+      const bytes = await readBytesFromValue(value);
+      await writeFile(filePath, bytes);
+      await writeFile(
+        metadataPath,
+        JSON.stringify(
+          {
+            httpMetadata: options?.httpMetadata ?? {},
+            customMetadata: options?.customMetadata ?? {}
+          },
+          null,
+          2
+        ),
+        "utf8"
+      );
+    },
+    async get(key) {
+      const filePath = resolveKeyPath(key);
+      const metadataPath = `${filePath}.meta.json`;
+
+      try {
+        const [fileBuffer, metadataSource] = await Promise.all([
+          readFile(filePath),
+          readFile(metadataPath, "utf8").catch(() => "")
+        ]);
+        const metadata = metadataSource
+          ? (JSON.parse(metadataSource) as {
+              httpMetadata?: LocalMediaObject["httpMetadata"];
+            })
+          : {};
+        const bytes = new Uint8Array(fileBuffer);
+        return {
+          httpMetadata: metadata.httpMetadata,
+          async arrayBuffer() {
+            return bytes.buffer.slice(
+              bytes.byteOffset,
+              bytes.byteOffset + bytes.byteLength
+            );
+          },
+          body: new Blob([bytes], {
+            type: metadata.httpMetadata?.contentType || "application/octet-stream"
+          }).stream()
+        };
+      } catch (error) {
+        if (
+          error &&
+          typeof error === "object" &&
+          "code" in error &&
+          error.code === "ENOENT"
+        ) {
+          return null;
+        }
+        throw error;
+      }
+    }
+  };
+}
+
+async function readBytesFromValue(
+  value: ArrayBuffer | Uint8Array | ReadableStream<Uint8Array>
+) {
+  if (value instanceof ArrayBuffer) {
+    return new Uint8Array(value);
+  }
+
+  if (value instanceof Uint8Array) {
+    return value;
+  }
+
+  const reader = value.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalLength = 0;
+
+  while (true) {
+    const { done, value: chunk } = await reader.read();
+    if (done) break;
+    if (!chunk) continue;
+    chunks.push(chunk);
+    totalLength += chunk.byteLength;
+  }
+
+  const bytes = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  return bytes;
 }

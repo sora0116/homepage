@@ -25,6 +25,7 @@ type D1DatabaseLike = {
 };
 
 const postVisibilityColumnCache = new WeakMap<D1DatabaseLike, Promise<boolean>>();
+const mediaAssetTableCache = new WeakMap<D1DatabaseLike, Promise<boolean>>();
 
 type RuntimeLocals = {
   runtime?: {
@@ -77,6 +78,17 @@ type InquiryRow = {
   updated_at: string;
 };
 
+type MediaAssetRow = {
+  id: string;
+  storage_key: string;
+  file_name: string;
+  content_type: string;
+  size_bytes: number;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export interface PostInput {
   id?: string;
   slug: string;
@@ -113,6 +125,25 @@ export interface InquiryRecord {
   updatedAt: string;
 }
 
+export interface MediaAssetRecord {
+  id: string;
+  storageKey: string;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MediaAssetInput {
+  storageKey: string;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  createdBy?: string | null;
+}
+
 const WORK_COLUMNS = `
   id,
   slug,
@@ -134,6 +165,17 @@ const INQUIRY_COLUMNS = `
   message,
   status,
   source,
+  created_at,
+  updated_at
+`;
+
+const MEDIA_ASSET_COLUMNS = `
+  id,
+  storage_key,
+  file_name,
+  content_type,
+  size_bytes,
+  created_by,
   created_at,
   updated_at
 `;
@@ -209,6 +251,25 @@ async function hasPostVisibilityColumn(db: D1DatabaseLike) {
   return pending;
 }
 
+async function hasMediaAssetTable(db: D1DatabaseLike) {
+  const cached = mediaAssetTableCache.get(db);
+  if (cached) {
+    return cached;
+  }
+
+  const pending = db
+    .prepare(
+      "select name from sqlite_master where type = 'table' and name = 'media_assets' limit 1"
+    )
+    .bind()
+    .first<{ name?: string }>()
+    .then((row) => Boolean(row?.name))
+    .catch(() => false);
+
+  mediaAssetTableCache.set(db, pending);
+  return pending;
+}
+
 function mapWork(row: WorkRow): WorkRecord {
   return {
     id: row.id,
@@ -241,6 +302,19 @@ function mapInquiry(row: InquiryRow): InquiryRecord {
     message: row.message,
     status: row.status,
     source: row.source,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
+function mapMediaAsset(row: MediaAssetRow): MediaAssetRecord {
+  return {
+    id: row.id,
+    storageKey: row.storage_key,
+    fileName: row.file_name,
+    contentType: row.content_type,
+    sizeBytes: row.size_bytes,
+    createdBy: row.created_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
@@ -439,6 +513,93 @@ export async function listInquiries(db: D1DatabaseLike | null) {
     .all<InquiryRow>();
 
   return (result.results || []).map(mapInquiry);
+}
+
+export async function listMediaAssets(
+  db: D1DatabaseLike | null,
+  options: { query?: string; limit?: number } = {}
+) {
+  if (!db || !(await hasMediaAssetTable(db))) {
+    return [] as MediaAssetRecord[];
+  }
+
+  const query = options.query?.trim() || "";
+  const limit = Math.max(1, Math.min(options.limit ?? DEFAULT_LIST_LIMIT, 100));
+  const statement = query
+    ? db
+        .prepare(
+          `select ${MEDIA_ASSET_COLUMNS}
+           from media_assets
+           where lower(file_name) like lower(?)
+           order by datetime(created_at) desc
+           limit ?`
+        )
+        .bind(`%${query}%`, limit)
+    : db
+        .prepare(
+          `select ${MEDIA_ASSET_COLUMNS}
+           from media_assets
+           order by datetime(created_at) desc
+           limit ?`
+        )
+        .bind(limit);
+  const result = await statement.all<MediaAssetRow>();
+  return (result.results || []).map(mapMediaAsset);
+}
+
+export async function createMediaAsset(
+  db: D1DatabaseLike | null,
+  input: MediaAssetInput
+) {
+  if (!db || !(await hasMediaAssetTable(db))) {
+    return null;
+  }
+
+  const existing = await db
+    .prepare(`select ${MEDIA_ASSET_COLUMNS} from media_assets where storage_key = ? limit 1`)
+    .bind(input.storageKey)
+    .first<MediaAssetRow>();
+  if (existing) {
+    return mapMediaAsset(existing);
+  }
+
+  const now = new Date().toISOString();
+  const id = crypto.randomUUID();
+  await db
+    .prepare(
+      `insert into media_assets (
+        id,
+        storage_key,
+        file_name,
+        content_type,
+        size_bytes,
+        created_by,
+        created_at,
+        updated_at
+      ) values (?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .bind(
+      id,
+      input.storageKey,
+      input.fileName,
+      input.contentType,
+      input.sizeBytes,
+      input.createdBy || null,
+      now,
+      now
+    )
+    .run();
+
+  return {
+    id,
+    storageKey: input.storageKey,
+    fileName: input.fileName,
+    contentType: input.contentType,
+    sizeBytes: input.sizeBytes,
+    createdBy: input.createdBy || null,
+    createdAt: now,
+    updatedAt: now
+  } satisfies MediaAssetRecord;
 }
 
 export async function createInquiry(

@@ -13,6 +13,10 @@ binding = "DB"
 database_name = "homepage-db"
 database_id = "0a69fa05-e711-41f8-ba53-ec23015ba7b8"
 
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "homepage-media"
+
 [[ratelimits]]
 name = "PUBLIC_API_RATE_LIMITER"
 namespace_id = "REPLACE_WITH_PUBLIC_RATE_LIMIT_NAMESPACE_ID"

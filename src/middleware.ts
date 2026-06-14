@@ -12,7 +12,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
       env: {
         ...localRuntime.env,
         ...env,
-        DB: env.DB ?? localRuntime.db
+        DB: env.DB ?? localRuntime.db,
+        MEDIA_BUCKET: env.MEDIA_BUCKET ?? localRuntime.mediaBucket
       }
     };
   }

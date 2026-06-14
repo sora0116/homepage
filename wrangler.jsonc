@@ -12,6 +12,12 @@
       "database_id": "0a69fa05-e711-41f8-ba53-ec23015ba7b8"
     }
   ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA_BUCKET",
+      "bucket_name": "homepage-media"
+    }
+  ],
   "compatibility_date": "2026-06-13",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
