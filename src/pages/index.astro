@@ -84,7 +84,7 @@ const homepage = await getHomepageSettings(db);
       title="相談や依頼について"
       intro={homepage.contactIntro}
     />
-    <div class="cta-panel homepage-contact__panel">
+    <div class="homepage-contact__panel">
       <div class="button-row">
         <DadsButton href="/contact/" label="問い合わせフォームへ" />
         <DadsButton href={siteMeta.social[0].href} tone="outline" label="GitHub" />

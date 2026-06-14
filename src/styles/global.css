@@ -491,8 +491,9 @@ img {
 }
 
 .homepage-contact__panel {
-  display: grid;
-  gap: var(--space-4);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .info-panel,
