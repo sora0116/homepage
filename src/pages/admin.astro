@@ -3,9 +3,11 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import DadsButton from "../components/DadsButton.astro";
 import NoticeBanner from "../components/NoticeBanner.astro";
 import SectionHeading from "../components/SectionHeading.astro";
+import { isLocalAdminLoginEnabled } from "../lib/admin-auth";
 import { getAdminPageData } from "../lib/admin-page";
 
 const { session, db, status, error, posts, works, inquiries } = await getAdminPageData(Astro);
+const usesLocalAdminLogin = isLocalAdminLoginEnabled(Astro.locals);
 ---
 
 <BaseLayout title="Admin" description="Content management">
@@ -44,10 +46,15 @@ const { session, db, status, error, posts, works, inquiries } = await getAdminPa
     {!session ? (
       <div class="admin-shell stack">
         <p>
-          GitHub OAuth で管理画面へログインします。認証後はこのページへ戻り、更新操作ができます。
+          {usesLocalAdminLogin
+            ? "ローカル開発モードの簡易ログインで管理画面へ入ります。D1 更新や本文編集を localhost 上で確認できます。"
+            : "GitHub OAuth で管理画面へログインします。認証後はこのページへ戻り、更新操作ができます。"}
         </p>
         <div class="button-row">
-          <DadsButton href="/api/admin/auth/login" label="GitHub でログイン" />
+          <DadsButton
+            href="/api/admin/auth/login"
+            label={usesLocalAdminLogin ? "ローカル管理者でログイン" : "GitHub でログイン"}
+          />
         </div>
       </div>
     ) : (

@@ -40,14 +40,18 @@ export function createCookie(
   options: {
     maxAge?: number;
     httpOnly?: boolean;
+    secure?: boolean;
   } = {}
 ) {
   const parts = [
     `${name}=${encodeURIComponent(value)}`,
     "Path=/",
-    "SameSite=Lax",
-    "Secure"
+    "SameSite=Lax"
   ];
+
+  if (options.secure !== false) {
+    parts.push("Secure");
+  }
 
   if (options.maxAge !== undefined) {
     parts.push(`Max-Age=${options.maxAge}`);
@@ -62,4 +66,10 @@ export function createCookie(
 
 export function clearCookie(name: string) {
   return createCookie(name, "", { maxAge: 0 });
+}
+
+export function shouldUseSecureCookies(input: Request | URL | string) {
+  const url =
+    input instanceof Request ? new URL(input.url) : input instanceof URL ? input : new URL(input);
+  return url.protocol === "https:";
 }

@@ -10,6 +10,8 @@ import { getPostById } from "../../../lib/db";
 const { session, db, status, error } = await getAdminPageData(Astro);
 const id = Astro.params.id || "";
 const post = session ? await getPostById(db, id) : null;
+const postHref =
+  post && post.visibility === "private" ? `/private-blog/${post.slug}/` : post ? `/blog/${post.slug}/` : "/blog/";
 ---
 
 <BaseLayout title="Edit Post" description="Edit post">
@@ -33,7 +35,7 @@ const post = session ? await getPostById(db, id) : null;
       <div class="admin-shell stack">
         <div class="button-row">
           <DadsButton href="/admin/posts" tone="outline" label="記事一覧へ戻る" />
-          <DadsButton href={`/blog/${post.slug}/`} tone="outline" label="公開ページ" />
+          <DadsButton href={postHref} tone="outline" label="公開ページ" />
         </div>
         <form class="admin-form stack" method="post" action="/api/admin/posts">
           <input type="hidden" name="id" value={post.id} />
@@ -58,6 +60,20 @@ const post = session ? await getPostById(db, id) : null;
             <label class="dads-form-control-label__label" for="status">状態</label>
             <span class="dads-select"><span class="dads-select__control"><select class="dads-select__select" data-size="md" id="status" name="status"><option value="draft" selected={post.status === "draft"}>draft</option><option value="published" selected={post.status === "published"}>published</option></select><svg class="dads-select__chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17L3 8L4 7L12 15L20 7L21 8L12 17Z" fill="currentColor"></path></svg></span></span>
           </div>
+          <label class="dads-checkbox app-field">
+            <span class="dads-checkbox__checkbox">
+              <input
+                class="dads-checkbox__input"
+                type="checkbox"
+                name="isPrivate"
+                value="true"
+                checked={post.visibility === "private"}
+              />
+            </span>
+            <span class="dads-checkbox__label">
+              Cloudflare Access 経由だけで見せる
+            </span>
+          </label>
           <div class="dads-form-control-label app-field" data-size="md">
             <label class="dads-form-control-label__label" for="publishedAt">公開日時</label>
             <span class="dads-input-text"><input class="dads-input-text__input" data-size="md" id="publishedAt" name="publishedAt" type="datetime-local" value={toDateTimeLocal(post.publishedAt)} required /></span>

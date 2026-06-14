@@ -5,6 +5,7 @@ create table if not exists posts (
   description text not null,
   body text not null,
   status text not null check (status in ('draft', 'published')),
+  visibility text not null default 'public' check (visibility in ('public', 'private')),
   published_at text not null,
   updated_at text not null,
   tags_json text

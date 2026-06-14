@@ -1,4 +1,8 @@
-import { clearCookie, createCookie, createRandomString, getCookieValue } from "./oauth";
+import {
+  createCookie,
+  createRandomString,
+  getCookieValue
+} from "./oauth";
 import { getRuntimeEnv } from "./runtime-env";
 
 const ADMIN_SESSION_COOKIE = "admin_session";
@@ -16,6 +20,12 @@ export interface AdminSession {
   name: string;
   avatarUrl: string;
   exp: number;
+}
+
+export interface AdminIdentity {
+  login: string;
+  name: string;
+  avatarUrl: string;
 }
 
 function encodeBase64Url(value: string) {
@@ -57,21 +67,33 @@ function getSessionSecret(locals: RuntimeLocals | undefined) {
   );
 }
 
-export function createOAuthCookies() {
+export function createOAuthCookies(useSecureCookies = true) {
   const state = createRandomString();
   const verifier = createRandomString(48);
   const headers = new Headers();
-  headers.append("set-cookie", createCookie(OAUTH_STATE_COOKIE, state, { maxAge: 600 }));
   headers.append(
     "set-cookie",
-    createCookie(OAUTH_VERIFIER_COOKIE, verifier, { maxAge: 600 })
+    createCookie(OAUTH_STATE_COOKIE, state, { maxAge: 600, secure: useSecureCookies })
+  );
+  headers.append(
+    "set-cookie",
+    createCookie(OAUTH_VERIFIER_COOKIE, verifier, {
+      maxAge: 600,
+      secure: useSecureCookies
+    })
   );
   return { state, verifier, headers };
 }
 
-export function clearOAuthCookies(headers: Headers) {
-  headers.append("set-cookie", clearCookie(OAUTH_STATE_COOKIE));
-  headers.append("set-cookie", clearCookie(OAUTH_VERIFIER_COOKIE));
+export function clearOAuthCookies(headers: Headers, useSecureCookies = true) {
+  headers.append(
+    "set-cookie",
+    createCookie(OAUTH_STATE_COOKIE, "", { maxAge: 0, secure: useSecureCookies })
+  );
+  headers.append(
+    "set-cookie",
+    createCookie(OAUTH_VERIFIER_COOKIE, "", { maxAge: 0, secure: useSecureCookies })
+  );
 }
 
 export function readOAuthCookies(request: Request) {
@@ -90,9 +112,28 @@ export function getAllowedAdminLogins(locals: RuntimeLocals | undefined) {
     .filter(Boolean);
 }
 
+export function isLocalAdminLoginEnabled(locals: RuntimeLocals | undefined) {
+  return import.meta.env.DEV && getRuntimeEnv(locals, "ADMIN_LOCAL_LOGIN") === "true";
+}
+
+export function getLocalAdminIdentity(locals: RuntimeLocals | undefined): AdminIdentity {
+  const allowedLogins = getAllowedAdminLogins(locals);
+  const login =
+    getRuntimeEnv(locals, "ADMIN_LOCAL_LOGIN_USERNAME") ||
+    allowedLogins[0] ||
+    "local-admin";
+
+  return {
+    login,
+    name: getRuntimeEnv(locals, "ADMIN_LOCAL_LOGIN_NAME") || login,
+    avatarUrl: getRuntimeEnv(locals, "ADMIN_LOCAL_LOGIN_AVATAR_URL") || ""
+  };
+}
+
 export async function createAdminSessionCookie(
   locals: RuntimeLocals | undefined,
-  session: Omit<AdminSession, "exp">
+  session: Omit<AdminSession, "exp">,
+  useSecureCookies = true
 ) {
   const secret = getSessionSecret(locals);
   if (!secret) {
@@ -106,7 +147,8 @@ export async function createAdminSessionCookie(
   const encodedPayload = encodeBase64Url(JSON.stringify(payload));
   const signature = await sign(encodedPayload, secret);
   return createCookie(ADMIN_SESSION_COOKIE, `${encodedPayload}.${signature}`, {
-    maxAge: 60 * 60 * 24 * 7
+    maxAge: 60 * 60 * 24 * 7,
+    secure: useSecureCookies
   });
 }
 
@@ -152,6 +194,9 @@ export async function requireAdminSession(
   return session;
 }
 
-export function clearAdminSessionCookie() {
-  return clearCookie(ADMIN_SESSION_COOKIE);
+export function clearAdminSessionCookie(useSecureCookies = true) {
+  return createCookie(ADMIN_SESSION_COOKIE, "", {
+    maxAge: 0,
+    secure: useSecureCookies
+  });
 }

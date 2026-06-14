@@ -552,6 +552,14 @@ img {
   text-decoration-thickness: 3px;
 }
 
+.post-card__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
 .tag-list li {
   display: inline-grid;
   align-items: center;
@@ -599,6 +607,24 @@ img {
 
 .dads-chip-label[data-style="text"] {
   color: var(--color-primitive-blue-1000);
+}
+
+.post-visibility-badge[data-visibility="private"] {
+  border-color: var(--color-primitive-orange-800);
+  background: var(--color-primitive-orange-50);
+  color: var(--color-primitive-orange-800);
+}
+
+.post-visibility-badge[data-visibility="public"] {
+  border-color: var(--color-primitive-blue-900);
+}
+
+.admin-post-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
 }
 
 .dads-heading {

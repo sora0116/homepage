@@ -5,6 +5,7 @@ import {
   getAllowedAdminLogins,
   readOAuthCookies
 } from "../../../../lib/admin-auth";
+import { shouldUseSecureCookies } from "../../../../lib/oauth";
 import { getRuntimeEnv } from "../../../../lib/runtime-env";
 
 type GitHubUser = {
@@ -19,12 +20,13 @@ function redirect(location: string, headers = new Headers()) {
 }
 
 export const GET: APIRoute = async ({ request, url, locals }) => {
+  const useSecureCookies = shouldUseSecureCookies(request);
   const state = url.searchParams.get("state");
   const code = url.searchParams.get("code");
   const error = url.searchParams.get("error");
   const oauth = readOAuthCookies(request);
   const headers = new Headers();
-  clearOAuthCookies(headers);
+  clearOAuthCookies(headers, useSecureCookies);
 
   if (error) {
     return redirect("/admin?error=unauthorized", headers);
@@ -83,7 +85,7 @@ export const GET: APIRoute = async ({ request, url, locals }) => {
       login: user.login,
       name: user.name || user.login,
       avatarUrl: user.avatar_url || ""
-    })
+    }, useSecureCookies)
   );
   return redirect("/admin?status=login", headers);
 };

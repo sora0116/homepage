@@ -2,6 +2,7 @@ import type {
   HomepageSettings,
   PostRecord,
   PostStatus,
+  PostVisibility,
   WorkLink,
   WorkRecord
 } from "./default-content";
@@ -23,6 +24,8 @@ type D1DatabaseLike = {
   prepare: (query: string) => D1Statement;
 };
 
+const postVisibilityColumnCache = new WeakMap<D1DatabaseLike, Promise<boolean>>();
+
 type RuntimeLocals = {
   runtime?: {
     env?: Record<string, unknown>;
@@ -36,6 +39,7 @@ type PostRow = {
   description: string;
   body: string;
   status: PostStatus;
+  visibility: PostVisibility;
   published_at: string;
   updated_at: string;
   tags_json: string | null;
@@ -80,6 +84,7 @@ export interface PostInput {
   description: string;
   body: string;
   status: PostStatus;
+  visibility: PostVisibility;
   publishedAt: string;
   tags: string[];
 }
@@ -107,18 +112,6 @@ export interface InquiryRecord {
   createdAt: string;
   updatedAt: string;
 }
-
-const POST_COLUMNS = `
-  id,
-  slug,
-  title,
-  description,
-  body,
-  status,
-  published_at,
-  updated_at,
-  tags_json
-`;
 
 const WORK_COLUMNS = `
   id,
@@ -173,12 +166,47 @@ function mapPost(row: PostRow): PostRecord {
     description: row.description,
     body: row.body,
     status: row.status,
+    visibility: row.visibility || "public",
     publishedAt: row.published_at,
     updatedAt: row.updated_at,
     tags: parseJsonArray(row.tags_json).filter(
       (tag): tag is string => typeof tag === "string"
     )
   };
+}
+
+function postColumns(hasVisibilityColumn: boolean) {
+  return `
+    id,
+    slug,
+    title,
+    description,
+    body,
+    status,
+    ${hasVisibilityColumn ? "visibility," : "'public' as visibility,"}
+    published_at,
+    updated_at,
+    tags_json
+  `;
+}
+
+async function hasPostVisibilityColumn(db: D1DatabaseLike) {
+  const cached = postVisibilityColumnCache.get(db);
+  if (cached) {
+    return cached;
+  }
+
+  const pending = db
+    .prepare("pragma table_info(posts)")
+    .bind()
+    .all<{ name?: string }>()
+    .then((result) =>
+      (result.results || []).some((column) => column && column.name === "visibility")
+    )
+    .catch(() => false);
+
+  postVisibilityColumnCache.set(db, pending);
+  return pending;
 }
 
 function mapWork(row: WorkRow): WorkRecord {
@@ -225,21 +253,41 @@ function sortByPublishedAt<T extends { publishedAt: string }>(items: T[]) {
   );
 }
 
-export async function listPosts(db: D1DatabaseLike | null, includeDrafts = false) {
+export async function listPosts(
+  db: D1DatabaseLike | null,
+  options: { includeDrafts?: boolean; includePrivate?: boolean } = {}
+) {
+  const includeDrafts = options.includeDrafts ?? false;
+  const includePrivate = options.includePrivate ?? false;
   if (!db) {
     return sortByPublishedAt(
       defaultPosts
-        .filter((post) => includeDrafts || post.status === "published")
+        .filter(
+          (post) =>
+            (includeDrafts || post.status === "published") &&
+            (includePrivate || post.visibility === "public")
+        )
         .slice(0, DEFAULT_LIST_LIMIT)
     );
   }
 
+  const hasVisibilityColumn = await hasPostVisibilityColumn(db);
+  const postSelectColumns = postColumns(hasVisibilityColumn);
+
   const query = includeDrafts
-    ? `select ${POST_COLUMNS} from posts order by datetime(published_at) desc limit ?`
-    : `select ${POST_COLUMNS} from posts where status = ? order by datetime(published_at) desc limit ?`;
+    ? includePrivate || !hasVisibilityColumn
+      ? `select ${postSelectColumns} from posts order by datetime(published_at) desc limit ?`
+      : `select ${postSelectColumns} from posts where visibility = ? order by datetime(published_at) desc limit ?`
+    : includePrivate || !hasVisibilityColumn
+      ? `select ${postSelectColumns} from posts where status = ? order by datetime(published_at) desc limit ?`
+      : `select ${postSelectColumns} from posts where status = ? and visibility = ? order by datetime(published_at) desc limit ?`;
   const statement = includeDrafts
-    ? db.prepare(query).bind(DEFAULT_LIST_LIMIT)
-    : db.prepare(query).bind("published", DEFAULT_LIST_LIMIT);
+    ? includePrivate || !hasVisibilityColumn
+      ? db.prepare(query).bind(DEFAULT_LIST_LIMIT)
+      : db.prepare(query).bind("public", DEFAULT_LIST_LIMIT)
+    : includePrivate || !hasVisibilityColumn
+      ? db.prepare(query).bind("published", DEFAULT_LIST_LIMIT)
+      : db.prepare(query).bind("published", "public", DEFAULT_LIST_LIMIT);
   const result = await statement.all<PostRow>();
   return (result.results || []).map(mapPost);
 }
@@ -247,22 +295,38 @@ export async function listPosts(db: D1DatabaseLike | null, includeDrafts = false
 export async function getPostBySlug(
   db: D1DatabaseLike | null,
   slug: string,
-  includeDrafts = false
+  options: { includeDrafts?: boolean; includePrivate?: boolean } = {}
 ) {
+  const includeDrafts = options.includeDrafts ?? false;
+  const includePrivate = options.includePrivate ?? false;
   if (!db) {
     return (
       defaultPosts.find(
-        (post) => post.slug === slug && (includeDrafts || post.status === "published")
+        (post) =>
+          post.slug === slug &&
+          (includeDrafts || post.status === "published") &&
+          (includePrivate || post.visibility === "public")
       ) || null
     );
   }
 
+  const hasVisibilityColumn = await hasPostVisibilityColumn(db);
+  const postSelectColumns = postColumns(hasVisibilityColumn);
+
   const query = includeDrafts
-    ? `select ${POST_COLUMNS} from posts where slug = ? limit 1`
-    : `select ${POST_COLUMNS} from posts where slug = ? and status = ? limit 1`;
+    ? includePrivate || !hasVisibilityColumn
+      ? `select ${postSelectColumns} from posts where slug = ? limit 1`
+      : `select ${postSelectColumns} from posts where slug = ? and visibility = ? limit 1`
+    : includePrivate || !hasVisibilityColumn
+      ? `select ${postSelectColumns} from posts where slug = ? and status = ? limit 1`
+      : `select ${postSelectColumns} from posts where slug = ? and status = ? and visibility = ? limit 1`;
   const result = includeDrafts
-    ? await db.prepare(query).bind(slug).first<PostRow>()
-    : await db.prepare(query).bind(slug, "published").first<PostRow>();
+    ? includePrivate || !hasVisibilityColumn
+      ? await db.prepare(query).bind(slug).first<PostRow>()
+      : await db.prepare(query).bind(slug, "public").first<PostRow>()
+    : includePrivate || !hasVisibilityColumn
+      ? await db.prepare(query).bind(slug, "published").first<PostRow>()
+      : await db.prepare(query).bind(slug, "published", "public").first<PostRow>();
   return result ? mapPost(result) : null;
 }
 
@@ -274,8 +338,9 @@ export async function getPostById(
     return defaultPosts.find((post) => post.id === id) || null;
   }
 
+  const postSelectColumns = postColumns(await hasPostVisibilityColumn(db));
   const result = await db
-    .prepare(`select ${POST_COLUMNS} from posts where id = ? limit 1`)
+    .prepare(`select ${postSelectColumns} from posts where id = ? limit 1`)
     .bind(id)
     .first<PostRow>();
   return result ? mapPost(result) : null;
@@ -429,6 +494,7 @@ export async function updateInquiryStatus(
 export async function upsertPost(db: D1DatabaseLike, input: PostInput) {
   const now = new Date().toISOString();
   const id = input.id || crypto.randomUUID();
+  const hasVisibilityColumn = await hasPostVisibilityColumn(db);
   const duplicate = await db
     .prepare(`select id from posts where slug = ? and id != ? limit 1`)
     .bind(input.slug, id)
@@ -440,7 +506,20 @@ export async function upsertPost(db: D1DatabaseLike, input: PostInput) {
 
   await db
     .prepare(
-      `insert into posts (id, slug, title, description, body, status, published_at, updated_at, tags_json)
+      hasVisibilityColumn
+        ? `insert into posts (id, slug, title, description, body, status, visibility, published_at, updated_at, tags_json)
+       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       on conflict(id) do update set
+         slug = excluded.slug,
+         title = excluded.title,
+         description = excluded.description,
+         body = excluded.body,
+         status = excluded.status,
+         visibility = excluded.visibility,
+         published_at = excluded.published_at,
+         updated_at = excluded.updated_at,
+         tags_json = excluded.tags_json`
+        : `insert into posts (id, slug, title, description, body, status, published_at, updated_at, tags_json)
        values (?, ?, ?, ?, ?, ?, ?, ?, ?)
        on conflict(id) do update set
          slug = excluded.slug,
@@ -453,15 +532,30 @@ export async function upsertPost(db: D1DatabaseLike, input: PostInput) {
          tags_json = excluded.tags_json`
     )
     .bind(
-      id,
-      input.slug,
-      input.title,
-      input.description,
-      input.body,
-      input.status,
-      input.publishedAt,
-      now,
-      JSON.stringify(input.tags)
+      ...(hasVisibilityColumn
+        ? [
+            id,
+            input.slug,
+            input.title,
+            input.description,
+            input.body,
+            input.status,
+            input.visibility,
+            input.publishedAt,
+            now,
+            JSON.stringify(input.tags)
+          ]
+        : [
+            id,
+            input.slug,
+            input.title,
+            input.description,
+            input.body,
+            input.status,
+            input.publishedAt,
+            now,
+            JSON.stringify(input.tags)
+          ])
     )
     .run();
 }

@@ -1,11 +1,15 @@
 import { ApiError } from "../errors";
 import type { D1DatabaseLike } from "../runtime";
+import type { PostVisibility } from "../../default-content";
+
+const postVisibilityColumnCache = new WeakMap<D1DatabaseLike, Promise<boolean>>();
 
 export interface ApiPostSummary {
   id: string;
   slug: string;
   title: string;
   description: string;
+  visibility: PostVisibility;
   createdAt: string;
   updatedAt: string;
 }
@@ -35,6 +39,7 @@ interface PostRow {
   description: string;
   body?: string;
   status?: "draft" | "published";
+  visibility?: PostVisibility;
   published_at: string;
   updated_at: string;
   tags_json?: string | null;
@@ -63,11 +68,36 @@ function ensureDb(db: D1DatabaseLike | null) {
   return db;
 }
 
+function postSelectVisibility(hasVisibilityColumn: boolean) {
+  return hasVisibilityColumn ? "visibility" : "'public' as visibility";
+}
+
+async function hasPostVisibilityColumn(db: D1DatabaseLike) {
+  const cached = postVisibilityColumnCache.get(db);
+  if (cached) {
+    return cached;
+  }
+
+  const pending = db
+    .prepare("pragma table_info(posts)")
+    .bind()
+    .all<{ name?: string }>()
+    .then((result) =>
+      (result.results || []).some((column) => column && column.name === "visibility")
+    )
+    .catch(() => false);
+
+  postVisibilityColumnCache.set(db, pending);
+  return pending;
+}
+
 export async function listPublicPosts(
   db: D1DatabaseLike | null,
-  options: { limit: number; offset: number }
+  options: { limit: number; offset: number; includePrivate?: boolean }
 ) {
   const database = ensureDb(db);
+  const includePrivate = options.includePrivate ?? false;
+  const hasVisibility = await hasPostVisibilityColumn(database);
   const result = await database
     .prepare(
       `SELECT
@@ -75,15 +105,21 @@ export async function listPublicPosts(
          slug,
          title,
          description,
+         ${postSelectVisibility(hasVisibility)},
          published_at,
          updated_at
        FROM posts
        WHERE status = ?
+         ${includePrivate || !hasVisibility ? "" : "AND visibility = ?"}
        ORDER BY datetime(published_at) DESC
        LIMIT ?
        OFFSET ?`
     )
-    .bind("published", options.limit, options.offset)
+    .bind(
+      ...(includePrivate || !hasVisibility
+        ? ["published", options.limit, options.offset]
+        : ["published", "public", options.limit, options.offset])
+    )
     .all<PostRow>();
 
   return (result.results || []).map((row) => ({
@@ -91,6 +127,7 @@ export async function listPublicPosts(
     slug: row.slug,
     title: row.title,
     description: row.description,
+    visibility: row.visibility || "public",
     createdAt: row.published_at,
     updatedAt: row.updated_at
   }));
@@ -98,9 +135,12 @@ export async function listPublicPosts(
 
 export async function getPublicPostBySlug(
   db: D1DatabaseLike | null,
-  slug: string
+  slug: string,
+  options: { includePrivate?: boolean } = {}
 ) {
   const database = ensureDb(db);
+  const includePrivate = options.includePrivate ?? false;
+  const hasVisibility = await hasPostVisibilityColumn(database);
   const row = await database
     .prepare(
       `SELECT
@@ -110,15 +150,21 @@ export async function getPublicPostBySlug(
          description,
          body,
          status,
+         ${postSelectVisibility(hasVisibility)},
          published_at,
          updated_at,
          tags_json
        FROM posts
        WHERE slug = ?
          AND status = ?
+         ${includePrivate || !hasVisibility ? "" : "AND visibility = ?"}
        LIMIT 1`
     )
-    .bind(slug, "published")
+    .bind(
+      ...(includePrivate || !hasVisibility
+        ? [slug, "published"]
+        : [slug, "published", "public"])
+    )
     .first<PostRow>();
 
   if (!row) {
@@ -132,6 +178,7 @@ export async function getPublicPostBySlug(
     description: row.description,
     body: row.body || "",
     status: row.status || "draft",
+    visibility: row.visibility || "public",
     createdAt: row.published_at,
     updatedAt: row.updated_at,
     tags: parseTags(row.tags_json)
@@ -143,6 +190,7 @@ export async function listAdminPosts(
   options: { limit: number; offset: number }
 ) {
   const database = ensureDb(db);
+  const hasVisibility = await hasPostVisibilityColumn(database);
   const result = await database
     .prepare(
       `SELECT
@@ -150,6 +198,7 @@ export async function listAdminPosts(
          slug,
          title,
          description,
+         ${postSelectVisibility(hasVisibility)},
          published_at,
          updated_at
        FROM posts
@@ -165,6 +214,7 @@ export async function listAdminPosts(
     slug: row.slug,
     title: row.title,
     description: row.description,
+    visibility: row.visibility || "public",
     createdAt: row.published_at,
     updatedAt: row.updated_at
   }));
@@ -178,11 +228,13 @@ export async function createAdminPost(
     description: string;
     body: string;
     status: "draft" | "published";
+    visibility: PostVisibility;
     publishedAt: string;
     tags: string[];
   }
 ) {
   const database = ensureDb(db);
+  const hasVisibility = await hasPostVisibilityColumn(database);
   const duplicate = await database
     .prepare(`SELECT id FROM posts WHERE slug = ? LIMIT 1`)
     .bind(input.slug)
@@ -196,7 +248,20 @@ export async function createAdminPost(
   const id = crypto.randomUUID();
   await database
     .prepare(
-      `INSERT INTO posts (
+      hasVisibility
+        ? `INSERT INTO posts (
+         id,
+         slug,
+         title,
+         description,
+         body,
+         status,
+         visibility,
+         published_at,
+         updated_at,
+         tags_json
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        : `INSERT INTO posts (
          id,
          slug,
          title,
@@ -209,15 +274,30 @@ export async function createAdminPost(
        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .bind(
-      id,
-      input.slug,
-      input.title,
-      input.description,
-      input.body,
-      input.status,
-      input.publishedAt,
-      now,
-      JSON.stringify(input.tags)
+      ...(hasVisibility
+        ? [
+            id,
+            input.slug,
+            input.title,
+            input.description,
+            input.body,
+            input.status,
+            input.visibility,
+            input.publishedAt,
+            now,
+            JSON.stringify(input.tags)
+          ]
+        : [
+            id,
+            input.slug,
+            input.title,
+            input.description,
+            input.body,
+            input.status,
+            input.publishedAt,
+            now,
+            JSON.stringify(input.tags)
+          ])
     )
     .run();
 
@@ -233,11 +313,13 @@ export async function updateAdminPost(
     description: string;
     body: string;
     status: "draft" | "published";
+    visibility: PostVisibility;
     publishedAt: string;
     tags: string[];
   }
 ) {
   const database = ensureDb(db);
+  const hasVisibility = await hasPostVisibilityColumn(database);
   const duplicate = await database
     .prepare(`SELECT id FROM posts WHERE slug = ? AND id != ? LIMIT 1`)
     .bind(input.slug, id)
@@ -258,7 +340,19 @@ export async function updateAdminPost(
 
   await database
     .prepare(
-      `UPDATE posts
+      hasVisibility
+        ? `UPDATE posts
+       SET slug = ?,
+           title = ?,
+           description = ?,
+           body = ?,
+           status = ?,
+           visibility = ?,
+           published_at = ?,
+           updated_at = ?,
+           tags_json = ?
+       WHERE id = ?`
+        : `UPDATE posts
        SET slug = ?,
            title = ?,
            description = ?,
@@ -270,15 +364,30 @@ export async function updateAdminPost(
        WHERE id = ?`
     )
     .bind(
-      input.slug,
-      input.title,
-      input.description,
-      input.body,
-      input.status,
-      input.publishedAt,
-      new Date().toISOString(),
-      JSON.stringify(input.tags),
-      id
+      ...(hasVisibility
+        ? [
+            input.slug,
+            input.title,
+            input.description,
+            input.body,
+            input.status,
+            input.visibility,
+            input.publishedAt,
+            new Date().toISOString(),
+            JSON.stringify(input.tags),
+            id
+          ]
+        : [
+            input.slug,
+            input.title,
+            input.description,
+            input.body,
+            input.status,
+            input.publishedAt,
+            new Date().toISOString(),
+            JSON.stringify(input.tags),
+            id
+          ])
     )
     .run();
 }

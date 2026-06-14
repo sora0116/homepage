@@ -5,6 +5,7 @@ insert or replace into posts (
   description,
   body,
   status,
+  visibility,
   published_at,
   updated_at,
   tags_json
@@ -18,6 +19,7 @@ insert or replace into posts (
 
 公開直後は設計や実装の話が中心ですが、今後は運用の改善や考え方も蓄積していく予定です。',
     'published',
+    'public',
     '2026-06-13T00:00:00.000Z',
     '2026-06-13T00:00:00.000Z',
     '["お知らせ","設計"]'
@@ -56,6 +58,7 @@ paginate: true
 3. 管理画面からの更新しやすさ
 ::',
     'published',
+    'public',
     '2026-06-11T00:00:00.000Z',
     '2026-06-13T00:00:00.000Z',
     '["DADS","デザイン"]'
@@ -69,9 +72,26 @@ paginate: true
 
 公開状態やタグ、本文の更新が即時反映されることを想定しています。',
     'draft',
+    'public',
     '2026-06-10T00:00:00.000Z',
     '2026-06-13T00:00:00.000Z',
     '["テスト"]'
+  ),
+  (
+    'post-access-notes',
+    'access-only-notes',
+    'Access 限定の設計メモ',
+    'Cloudflare Access を通した閲覧者だけに見せる非公開記事のサンプルです。',
+    'この記事は `visibility: private` の動作確認用サンプルです。
+
+Cloudflare Access を通ったリクエストでは一覧と詳細に現れ、通常の公開導線からは見えません。
+
+使いどころとしては、設計レビューのメモ、社内向け共有、公開前の下書き公開などを想定しています。',
+    'published',
+    'private',
+    '2026-06-09T00:00:00.000Z',
+    '2026-06-13T00:00:00.000Z',
+    '["Access","Private"]'
   );
 
 insert or replace into works (

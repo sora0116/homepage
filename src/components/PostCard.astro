@@ -4,19 +4,30 @@ import type { PostRecord } from "../lib/default-content";
 
 interface Props {
   post: PostRecord;
+  href?: string;
 }
 
-const { post } = Astro.props;
+const { post, href = post.visibility === "private" ? `/private-blog/${post.slug}/` : `/blog/${post.slug}/` } =
+  Astro.props;
 ---
 
 <article class="card dads-card">
-  <p class="meta">{formatDate(post.publishedAt)}</p>
-  <h3 class="dads-card__title"><a href={`/blog/${post.slug}/`}>{post.title}</a></h3>
+  <div class="post-card__meta">
+    <p class="meta">{formatDate(post.publishedAt)}</p>
+    <span
+      class="dads-chip-label post-visibility-badge"
+      data-style={post.visibility === "private" ? "outline" : "filled-outline"}
+      data-visibility={post.visibility}
+    >
+      {post.visibility === "private" ? "Private" : "Public"}
+    </span>
+  </div>
+  <h3 class="dads-card__title"><a href={href}>{post.title}</a></h3>
   <p>{post.description}</p>
   <ul class="tag-list" aria-label="タグ">
     {post.tags.map((tag) => <li>{tag}</li>)}
   </ul>
-  <a class="dads-utility-link" href={`/blog/${post.slug}/`}>
+  <a class="dads-utility-link" href={href}>
     <span class="dads-utility-link__label">記事を読む</span>
   </a>
 </article>

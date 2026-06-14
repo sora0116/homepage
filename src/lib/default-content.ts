@@ -1,4 +1,5 @@
 export type PostStatus = "draft" | "published";
+export type PostVisibility = "public" | "private";
 
 export interface PostRecord {
   id: string;
@@ -7,6 +8,7 @@ export interface PostRecord {
   description: string;
   body: string;
   status: PostStatus;
+  visibility: PostVisibility;
   publishedAt: string;
   updatedAt: string;
   tags: string[];
@@ -55,6 +57,7 @@ export const defaultPosts: PostRecord[] = [
 
 公開直後は設計や実装の話が中心ですが、今後は運用の改善や考え方も蓄積していく予定です。`,
     status: "published",
+    visibility: "public",
     publishedAt: "2026-06-13T00:00:00.000Z",
     updatedAt: now,
     tags: ["お知らせ", "設計"]
@@ -93,6 +96,7 @@ paginate: true
 3. 管理画面からの更新しやすさ
 ::`,
     status: "published",
+    visibility: "public",
     publishedAt: "2026-06-11T00:00:00.000Z",
     updatedAt: now,
     tags: ["DADS", "デザイン"]
@@ -106,9 +110,26 @@ paginate: true
 
 公開状態やタグ、本文の更新が即時反映されることを想定しています。`,
     status: "draft",
+    visibility: "public",
     publishedAt: "2026-06-10T00:00:00.000Z",
     updatedAt: now,
     tags: ["テスト"]
+  },
+  {
+    id: "post-access-notes",
+    slug: "access-only-notes",
+    title: "Access 限定の設計メモ",
+    description: "Cloudflare Access を通した閲覧者だけに見せる非公開記事のサンプルです。",
+    body: `この記事は \`visibility: private\` の動作確認用サンプルです。
+
+Cloudflare Access を通ったリクエストでは一覧と詳細に現れ、通常の公開導線からは見えません。
+
+使いどころとしては、設計レビューのメモ、社内向け共有、公開前の下書き公開などを想定しています。`,
+    status: "published",
+    visibility: "private",
+    publishedAt: "2026-06-09T00:00:00.000Z",
+    updatedAt: now,
+    tags: ["Access", "Private"]
   }
 ];
 

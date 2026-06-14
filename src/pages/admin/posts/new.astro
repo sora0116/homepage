@@ -49,6 +49,14 @@ const { session, db, status, error } = await getAdminPageData(Astro);
             <label class="dads-form-control-label__label" for="status">状態</label>
             <span class="dads-select"><span class="dads-select__control"><select class="dads-select__select" data-size="md" id="status" name="status"><option value="draft">draft</option><option value="published">published</option></select><svg class="dads-select__chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17L3 8L4 7L12 15L20 7L21 8L12 17Z" fill="currentColor"></path></svg></span></span>
           </div>
+          <label class="dads-checkbox app-field">
+            <span class="dads-checkbox__checkbox">
+              <input class="dads-checkbox__input" type="checkbox" name="isPrivate" value="true" />
+            </span>
+            <span class="dads-checkbox__label">
+              Cloudflare Access 経由だけで見せる
+            </span>
+          </label>
           <div class="dads-form-control-label app-field" data-size="md">
             <label class="dads-form-control-label__label" for="publishedAt">公開日時</label>
             <span class="dads-input-text"><input class="dads-input-text__input" data-size="md" id="publishedAt" name="publishedAt" type="datetime-local" value={toDateTimeLocal(new Date().toISOString())} required /></span>

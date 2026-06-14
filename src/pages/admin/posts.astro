@@ -7,6 +7,8 @@ import { getAdminPageData } from "../../lib/admin-page";
 import { formatDateTime } from "../../lib/db";
 
 const { session, db, status, error, posts } = await getAdminPageData(Astro);
+const postHref = (slug: string, visibility: "public" | "private") =>
+  visibility === "private" ? `/private-blog/${slug}/` : `/blog/${slug}/`;
 ---
 
 <BaseLayout title="Admin Posts" description="Post management">
@@ -48,12 +50,21 @@ const { session, db, status, error, posts } = await getAdminPageData(Astro);
                     {post.slug} / {formatDateTime(post.publishedAt)}
                   </p>
                 </div>
-                <p class="meta">status: {post.status}</p>
+                <div class="admin-post-badges">
+                  <span class="dads-chip-label" data-style="outline">{post.status}</span>
+                  <span
+                    class="dads-chip-label post-visibility-badge"
+                    data-style={post.visibility === "private" ? "outline" : "filled-outline"}
+                    data-visibility={post.visibility}
+                  >
+                    {post.visibility === "private" ? "Private" : "Public"}
+                  </span>
+                </div>
               </div>
               <p>{post.description}</p>
               <div class="button-row">
                 <DadsButton href={`/admin/posts/${post.id}`} label="この記事を編集" />
-                <DadsButton href={`/blog/${post.slug}/`} tone="outline" label="公開ページ" />
+                <DadsButton href={postHref(post.slug, post.visibility)} tone="outline" label="公開ページ" />
               </div>
             </article>
           ))}

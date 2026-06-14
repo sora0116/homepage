@@ -33,7 +33,7 @@ export async function getAdminPageData(Astro: AstroContextLike) {
     db,
     status,
     error,
-    posts: session ? await listPosts(db, true) : [],
+    posts: session ? await listPosts(db, { includeDrafts: true, includePrivate: true }) : [],
     works: session ? await listWorks(db, true) : [],
     homepage: session ? await getHomepageSettings(db) : null,
     inquiries,

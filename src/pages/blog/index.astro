@@ -4,7 +4,9 @@ import PostCard from "../../components/PostCard.astro";
 import SectionHeading from "../../components/SectionHeading.astro";
 import { getDb, listPosts } from "../../lib/db";
 
-const posts = await listPosts(getDb(Astro.locals));
+const posts = await listPosts(getDb(Astro.locals), {
+  includePrivate: true
+});
 ---
 
 <BaseLayout title="ブログ" description="記事一覧">

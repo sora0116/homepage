@@ -19,6 +19,7 @@ const postSchema = z.object({
   description: z.string().min(1).max(400),
   body: z.string().min(1),
   status: z.enum(["draft", "published"]),
+  visibility: z.enum(["public", "private"]).default("public"),
   publishedAt: z.iso.datetime(),
   tags: z.array(z.string().min(1).max(50)).max(20).default([])
 });

@@ -37,6 +37,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const description = String(formData.get("description") || "").trim();
   const body = String(formData.get("body") || "").trim();
   const status = String(formData.get("status") || "draft");
+  const isPrivate = String(formData.get("isPrivate") || "") === "true";
   const publishedAt = String(formData.get("publishedAt") || "").trim();
   const tags = parseTags(String(formData.get("tags") || ""));
 
@@ -60,6 +61,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       description,
       body,
       status: status === "published" ? "published" : "draft",
+      visibility: isPrivate ? "private" : "public",
       publishedAt: new Date(publishedAt).toISOString(),
       tags
     });

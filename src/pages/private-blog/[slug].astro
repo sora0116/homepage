@@ -1,17 +1,22 @@
 ---
 import MarkdownPageLayout from "../../layouts/MarkdownPageLayout.astro";
+import { hasCloudflareAccess } from "../../lib/cloudflare-access";
 import { getDb, getPostBySlug } from "../../lib/db";
 import { renderMarkdown } from "../../lib/markdown";
 
 const slug = Astro.params.slug || "";
-const post = await getPostBySlug(getDb(Astro.locals), slug);
-if (!post || post.visibility !== "public") {
+const hasAccess = hasCloudflareAccess(Astro.request);
+const post = hasAccess
+  ? await getPostBySlug(getDb(Astro.locals), slug, { includePrivate: true })
+  : null;
+
+if (!post || post.visibility !== "private") {
   Astro.response.status = 404;
 }
 ---
 
 {
-  post && post.visibility === "public" ? (
+  post && post.visibility === "private" ? (
     <MarkdownPageLayout
       title={post.title}
       description={post.description}
@@ -19,7 +24,7 @@ if (!post || post.visibility !== "public") {
       tags={post.tags}
       breadcrumbs={[
         { href: "/", label: "ホーム" },
-        { href: "/blog/", label: "ブログ" },
+        { href: "/private-blog/", label: "限定ブログ" },
         { label: post.title }
       ]}
     >
@@ -31,11 +36,11 @@ if (!post || post.visibility !== "public") {
       description="Not Found"
       breadcrumbs={[
         { href: "/", label: "ホーム" },
-        { href: "/blog/", label: "ブログ" },
+        { href: "/private-blog/", label: "限定ブログ" },
         { label: "Not Found" }
       ]}
     >
-      <p>指定された記事は存在しないか、まだ公開されていません。</p>
+      <p>指定された記事は存在しないか、Cloudflare Access 経由ではありません。</p>
     </MarkdownPageLayout>
   )
 }

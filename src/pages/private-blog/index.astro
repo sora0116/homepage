@@ -1,0 +1,34 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import PostCard from "../../components/PostCard.astro";
+import SectionHeading from "../../components/SectionHeading.astro";
+import { hasCloudflareAccess } from "../../lib/cloudflare-access";
+import { getDb, listPosts } from "../../lib/db";
+
+const hasAccess = hasCloudflareAccess(Astro.request);
+const posts = hasAccess
+  ? await listPosts(getDb(Astro.locals), { includePrivate: true })
+  : [];
+const privatePosts = posts.filter((post) => post.visibility === "private");
+
+if (!hasAccess) {
+  Astro.response.status = 404;
+}
+---
+
+<BaseLayout title="限定ブログ" description="Cloudflare Access 経由の限定記事">
+  <section class="page-section">
+    <SectionHeading
+      eyebrow="Private Blog"
+      title="限定ブログ"
+      intro="Cloudflare Access を通した閲覧者向けの記事です。"
+    />
+    <div class="stack">
+      {hasAccess ? (
+        privatePosts.map((post) => <PostCard post={post} href={`/private-blog/${post.slug}/`} />)
+      ) : (
+        <p>このページは Cloudflare Access 経由でのみ利用できます。</p>
+      )}
+    </div>
+  </section>
+</BaseLayout>

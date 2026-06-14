@@ -1,9 +1,14 @@
 ---
+import { getAdminSession } from "../lib/admin-auth";
 import { siteMeta } from "../lib/site";
 
 const normalizePath = (value: string) =>
   value.endsWith("/") && value !== "/" ? value.slice(0, -1) : value;
 const currentPath = normalizePath(Astro.url.pathname);
+const adminSession = await getAdminSession(Astro.locals, Astro.request);
+const navItems = adminSession
+  ? [...siteMeta.nav, { href: "/admin", label: "Admin" }]
+  : siteMeta.nav;
 ---
 
 <header class="site-header">
@@ -22,7 +27,7 @@ const currentPath = normalizePath(Astro.url.pathname);
       <nav class="site-nav__panel" aria-label="主要メニュー">
         <ul class="nav-list dads-horizontal-menu">
           {
-            siteMeta.nav.map((item) => (
+            navItems.map((item) => (
               <li class="dads-horizontal-menu__item">
                 <a
                   class="dads-horizontal-menu__item-inner"
